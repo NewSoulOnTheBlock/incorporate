@@ -1,40 +1,59 @@
 # Render blueprint for the Registrar.
 #
-# One web service runs both halves: the read-only HTTP API the registry front
-# end reads, and the payroll loop that pays people once a minute.
+# One web service runs both halves: the read-only HTTP API that the registry
+# front end reads, and the payroll loop that pays people once a minute.
 #
-# TWO SETTINGS HERE ARE LOAD-BEARING, NOT PREFERENCES:
+# ---------------------------------------------------------------------------
+# THIS IS THE FREE-TIER CONFIGURATION. READ BEFORE GOING LIVE.
+# ---------------------------------------------------------------------------
 #
-#   1. plan: starter (not free). A free instance sleeps after inactivity, and a
-#      sleeping Registrar runs no payroll. The schedule would freeze and resume
-#      later — the design survives that, but nobody gets paid meanwhile.
+# A free instance has no persistent disk and sleeps after a spell with no
+# inbound traffic. Both facts change what this service can honestly be used
+# for:
 #
-#   2. disk. A company's age is its number of payroll runs, and that count lives
-#      in SQLite. Without a persistent disk, every deploy or restart wipes the
-#      database: every company snaps back to Q0 and its 8% opening rate, and
-#      every employee's seniority resets from 4x to 1x. That is not a cosmetic
-#      reset — it rewrites what people are owed.
+#   1. The books do not survive. SQLite lives on ephemeral storage, so every
+#      deploy — and every wake from sleep — can start from an empty database.
+#      A company's age is its number of payroll runs, and that count lives in
+#      exactly that database. When it is lost, every company snaps back to Q0
+#      and its 8% opening rate, and every employee's seniority resets from 4x
+#      to 1x.
+#
+#   2. Payroll pauses while asleep. The schedule is driven by completed runs,
+#      so it freezes and resumes rather than fast-forwarding. The design
+#      survives this; it just means nobody is paid meanwhile.
+#
+# Consequently KEEPER_EXECUTE is 0 here. Running LIVE on ephemeral storage
+# would send real transfers computed from figures that can silently reset —
+# paying an 8% opening rate to a company that should be at 0.50%, and erasing
+# the seniority multiplier of everyone who earned it — with the books that
+# would prove it gone. Do not set this to 1 until the service has a disk.
+#
+# To make it safe to run live, add a card and switch to:
+#
+#   plan: starter
+#   disk:
+#     name: registry-books
+#     mountPath: /var/data
+#     sizeGB: 1
+#
+# and set DB_PATH to /var/data/incorporate.db so the books land on the disk.
 
 services:
   - type: web
     name: incorporate-registrar
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     branch: main
     buildCommand: npm ci --omit=dev
     startCommand: node src/registrar.js
     healthCheckPath: /api/protocol
 
-    disk:
-      name: registry-books
-      mountPath: /var/data
-      sizeGB: 1
-
     envVars:
-      # SQLite lives on the persistent disk, never in the ephemeral filesystem.
+      # Ephemeral on the free plan. Move this onto a mounted disk before
+      # trusting it with anything that must survive a restart.
       - key: DB_PATH
-        value: /var/data/incorporate.db
+        value: ./data/incorporate.db
 
       - key: NODE_VERSION
         value: "24"
@@ -42,22 +61,20 @@ services:
       - key: RPC_URL
         value: https://rpc.mainnet.chain.robinhood.com
 
-      # Which origins may read the API. Narrow this to the registry front end
-      # rather than leaving it open, now that you know the front end's URL.
+      # Which origins may read the API. Narrowed to the registry front end
+      # rather than left open.
       - key: ALLOWED_ORIGINS
         value: https://incorporate-gules.vercel.app
 
-      # LIVE. Payroll sends real transfers.
-      #
-      # This is inert until the first company is filed -- a run with no
-      # companies pays nobody -- so the risk begins the moment you file, not
-      # the moment you deploy. The Registrar still cannot move a treasury it
-      # cannot derive, so nothing moves at all until KEEPER_MNEMONIC is set.
+      # DRY RUN. Computes real payroll against real chain state and logs what
+      # it would pay, but moves nothing. See the warning above before changing.
       - key: KEEPER_EXECUTE
-        value: "1"
+        value: "0"
 
       # The mnemonic that derives EVERY company treasury. Set it in the Render
       # dashboard only. sync:false keeps it out of this file and out of git.
+      # Without it the Registrar still serves the API and still runs the loop —
+      # it simply cannot derive a treasury, so nothing can move.
       - key: KEEPER_MNEMONIC
         sync: false
 
