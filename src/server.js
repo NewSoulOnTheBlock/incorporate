@@ -267,6 +267,60 @@ const routes = {
   },
 };
 
+
+/* The launch tuple, needed to read creatorFeeRecipient back out of calldata. */
+const LAUNCH_PARAMS =
+  "tuple(string name,string symbol,string logo,string description," +
+  "tuple(string website,string twitter,string telegram,string discord,string extra) socials," +
+  "address creatorFeeRecipient,uint16 creatorTaxBps,bool buybackEnabled," +
+  "bytes32 expectedEconomics,bytes32 salt)";
+const LAUNCH_IFACE = new ethers.Interface([
+  `function launchToken(${LAUNCH_PARAMS} params, uint256 configId, address pairToken) payable returns (address)`,
+  `function launchToken(${LAUNCH_PARAMS} params, uint256 configId, address pairToken, address[] extra) payable returns (address)`,
+]);
+
+/**
+ * Prove a filing really pays into the treasury we reserved.
+ *
+ * There is no getter for this. The factory's getLaunchedToken returns the
+ * FOUNDER in its third field, not the fee recipient -- comparing against it
+ * rejects every honest filing. The recipient exists only in the launch
+ * calldata, so the caller hands us the transaction hash and we decode it.
+ *
+ * This is stronger than a getter would be: we verify the transaction was sent
+ * to our factory, succeeded, and named our vault, all from one authoritative
+ * artifact the caller cannot forge.
+ */
+async function verifyFilingTx(txHash, expectedVault) {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(String(txHash || ""))) return { error: "bad-tx-hash" };
+  const tx = await provider.getTransaction(txHash);
+  if (!tx) return { error: "tx-not-found" };
+  if (!tx.to || tx.to.toLowerCase() !== FACTORY.toLowerCase()) return { error: "not-a-factory-tx" };
+
+  const rcpt = await provider.getTransactionReceipt(txHash);
+  if (!rcpt || rcpt.status !== 1) return { error: "tx-did-not-succeed" };
+
+  let decoded;
+  try { decoded = LAUNCH_IFACE.parseTransaction({ data: tx.data, value: tx.value }); }
+  catch { return { error: "not-a-launch-tx" }; }
+
+  const prm = decoded.args[0];
+  if (String(prm.creatorFeeRecipient).toLowerCase() !== expectedVault.toLowerCase()) {
+    return { error: "treasury-mismatch", expected: expectedVault, found: prm.creatorFeeRecipient };
+  }
+  return {
+    ok: true,
+    founder: tx.from,
+    pairToken: decoded.args[2],
+    name: prm.name,
+    symbol: prm.symbol,
+    logo: prm.logo,
+    description: prm.description,
+    creatorTaxBps: Number(prm.creatorTaxBps),
+    block: rcpt.blockNumber,
+  };
+}
+
 /* Writes. Kept to the minimum the filing flow needs, and each one validated
  * against the chain rather than trusted from the browser. */
 const writeRoutes = {
@@ -330,34 +384,34 @@ const writeRoutes = {
     try { expected = vaultAddress(salt); }
     catch (err) { return { error: "registrar-not-configured", detail: err.message }; }
 
-    let curveAddr = null, recipient = null, graduated = 0;
+    // Prove the company pays into OUR treasury, from the launch calldata.
+    if (!body.txHash) return { error: "tx-hash-required" };
+    const v = await verifyFilingTx(body.txHash, expected);
+    if (v.error) return v;
+
+    // Confirm the factory agrees this token exists, and take the curve from it
+    // (field [1] IS the curve; only [2] and [3] were mislabelled).
+    let curveAddr = null;
     try {
       const g = await factory.getLaunchedToken(token);
-      curveAddr = g[1]; recipient = g[2]; graduated = g[3] ? 1 : 0;
+      if (!g[0] || g[0].toLowerCase() !== token) return { error: "token-does-not-match-tx" };
+      curveAddr = g[1];
     } catch {
       return { error: "not-a-registry-company" };
     }
-    if (!recipient || recipient.toLowerCase() !== expected.toLowerCase()) {
-      return { error: "treasury-mismatch", expected, found: recipient };
-    }
 
-    const t = erc20(token);
-    let name = body.name || "", symbol = body.symbol || "";
-    try { [name, symbol] = await Promise.all([t.name(), t.symbol()]); } catch {}
-
-    const pair = resolvePair(body.pairToken || NATIVE_ADDR);
-    const block = await provider.getBlockNumber().catch(() => 0);
+    // Everything below comes from the verified transaction, not the browser.
+    const pair = resolvePair(v.pairToken || NATIVE_ADDR);
 
     await insertLaunch.run(
-      token, name, symbol, body.description || "", body.image || "",
+      token, v.name, v.symbol, v.description || "", v.logo || "",
       curveAddr ? curveAddr.toLowerCase() : null,
       pair.address.toLowerCase(), pair.symbol, pair.decimals,
-      String(body.creator || "").toLowerCase(), CREATOR_TAX_BPS,
-      expected.toLowerCase(), salt, 0, now(), block, block);
+      String(v.founder).toLowerCase(), v.creatorTaxBps,
+      expected.toLowerCase(), salt, 0, now(), v.block, v.block);
 
     await useReserved.run(token, salt);
-    await setGraduatedIfKnown(token, graduated);
-    return { ok: true, token, vault: expected, curve: curveAddr };
+    return { ok: true, token, vault: expected, curve: curveAddr, symbol: v.symbol };
   },
 };
 

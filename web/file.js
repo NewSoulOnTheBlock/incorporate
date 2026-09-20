@@ -297,11 +297,10 @@ async function file() {
     status("work", '<span class="spin"></span>Registering the company for payroll…');
     const idx = await fetch(API + "/api/index-filing", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        token: predicted, salt: res.salt, pairToken: pair.address,
-        creator: S.account, description: params.description, image: params.logo,
-        name, symbol,
-      }),
+      // The tx hash is the proof. The Registrar re-reads this transaction and
+      // decodes creatorFeeRecipient from its calldata, because no getter on
+      // the token or curve exposes it.
+      body: JSON.stringify({ token: predicted, salt: res.salt, txHash: tx.hash }),
     }).then((r) => r.json());
 
     el("st2").className = "step done";

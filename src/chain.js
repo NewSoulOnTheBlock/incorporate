@@ -44,7 +44,11 @@ export const FACTORY_ABI = [
   "function feeEscrow() view returns (address)",
   "function snipeTaxStartBps() view returns (uint256)",
   "function snipeTaxSeconds() view returns (uint256)",
-  "function getLaunchedToken(address) view returns (address,address,address,bool)",
+  // VERIFIED against a real launch: the third field is the FOUNDER, not the
+  // fee recipient, and the fourth is not "graduated" (it reads true while the
+  // curve's own graduated() reads false). The fee recipient appears ONLY in
+  // the launch calldata -- no getter on the token or curve exposes it.
+  "function getLaunchedToken(address) view returns (address token, address curve, address founder, bool known)",
 ];
 
 export const ERC20_ABI = [
