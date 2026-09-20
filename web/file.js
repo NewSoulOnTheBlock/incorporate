@@ -50,36 +50,64 @@ async function ensureChain() {
       method: "wallet_switchEthereumChain", params: [{ chainId: want }],
     });
   } catch (err) {
-    // 4902 = the wallet has never heard of this chain, so offer to add it.
-    if (err.code === 4902 || /unrecognized|not added/i.test(err.message || "")) {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: want,
-          chainName: "Robinhood Chain",
-          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-          rpcUrls: [S.chain.rpcUrl],
-          blockExplorerUrls: [S.chain.explorer],
-        }],
-      });
-    } else throw err;
+    // A wallet that has never heard of this chain reports it inconsistently:
+    // sometimes 4902, sometimes -32603, and often with the real code buried in
+    // err.data.originalError. Rather than trying to enumerate those shapes,
+    // treat ANY failure that is not an outright user rejection as "the chain
+    // is probably missing" and offer to add it. Adding a chain the wallet
+    // already has is harmless; failing to offer is what strands people.
+    const code = err.code ?? err?.data?.originalError?.code;
+    if (code === 4001) throw new Error("You declined the network switch.");
+
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: want,
+        chainName: "Robinhood Chain",
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        rpcUrls: [S.chain.rpcUrl],
+        blockExplorerUrls: [S.chain.explorer],
+      }],
+    });
   }
 }
 
 async function connect() {
+  let accounts;
   try {
-    const accounts = await provider().send("eth_requestAccounts", []);
-    await ensureChain();
-    S.account = ethers.getAddress(accounts[0]);
-    el("wallet").textContent = short(S.account);
-    el("wallet").classList.add("on");
-    el("r-from").textContent = S.account;
-    el("st1").className = "step done";
-    el("st2").className = "step on";
-    refresh();
-    status("ok", `Connected as <code>${S.account}</code>.`);
+    accounts = await provider().send("eth_requestAccounts", []);
   } catch (err) {
-    status("bad", err.message || String(err));
+    const code = err.code ?? err?.data?.originalError?.code;
+    status("bad", code === 4001
+      ? "You declined the connection request."
+      : (err.message || String(err)));
+    return;
+  }
+  if (!accounts || !accounts.length) {
+    status("bad", "Your wallet returned no accounts. Unlock it and try again.");
+    return;
+  }
+
+  // Bank the connection immediately. Switching network is a SEPARATE step that
+  // can fail on its own; letting it undo an approval the user already gave is
+  // how you end up staring at a button that still says "Connect wallet".
+  S.account = ethers.getAddress(accounts[0]);
+  el("wallet").textContent = short(S.account);
+  el("wallet").classList.add("on");
+  el("r-from").textContent = S.account;
+  el("st1").className = "step done";
+  el("st2").className = "step on";
+  refresh();
+
+  try {
+    await ensureChain();
+    status("ok", `Connected as <code>${S.account}</code> on Robinhood Chain.`);
+  } catch (err) {
+    el("wallet").textContent = "Wrong network";
+    el("wallet").classList.remove("on");
+    status("bad", `Connected as <code>${S.account}</code>, but your wallet is not on
+      Robinhood Chain (${S.chain.chainIdHex}). ${err.message || ""}<br><br>
+      You can still fill the form — you will be asked to switch again when you file.`);
   }
 }
 

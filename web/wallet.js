@@ -50,12 +50,33 @@
     }
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      // The account is banked the moment it is approved. Network switching is
+      // a separate step that is allowed to fail without undoing the connection.
+      show(accounts[0], !(await chainOk()));
+
       if (!(await chainOk())) {
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }],
           });
-        } catch { /* the filing page handles adding the chain properly */ }
+        } catch (err) {
+          const code = err.code ?? err?.data?.originalError?.code;
+          if (code !== 4001) {
+            // Almost certainly means the wallet has never heard of chain 4663.
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                  chainId: CHAIN_HEX,
+                  chainName: "Robinhood Chain",
+                  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+                  rpcUrls: ["https://rpc.mainnet.chain.robinhood.com"],
+                  blockExplorerUrls: ["https://explorer.mainnet.chain.robinhood.com"],
+                }],
+              });
+            } catch { /* declined; the button will read "Wrong network" */ }
+          }
+        }
       }
       show(accounts[0], !(await chainOk()));
     } catch {
