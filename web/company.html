@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company — Incorporate</title>
+<meta name="description" content="A filed company: its market, its payroll, and who has been on it longest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="banner" id="banner" hidden></div>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
+    <nav class="nav">
+      <a href="./">Registry</a>
+      <a href="file.html">File</a>
+      <a href="formation.html">Formation</a>
+      <a href="docs.html">Docs</a>
+      <button class="wallet-btn" id="wallet">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- identity ------------------------------------------------------------ -->
+  <div class="co-head">
+    <div id="co-logo-slot"></div>
+    <div class="co-id">
+      <h1 id="co-name">Loading…</h1>
+      <div class="tickline">
+        <span id="co-ticker"></span>
+        <span id="co-status"></span>
+      </div>
+      <div class="addr" id="co-token"></div>
+      <p id="co-desc" style="color:var(--ink-soft);margin:10px 0 0;max-width:62ch"></p>
+    </div>
+  </div>
+
+  <div class="stat-row" style="margin-top:26px">
+    <div class="stat"><div class="k">Quarter</div><div class="v" id="s-q">—</div></div>
+    <div class="stat"><div class="k">Per period</div><div class="v" id="s-rate">—</div></div>
+    <div class="stat"><div class="k">Treasury</div><div class="v" id="s-tre">—</div></div>
+    <div class="stat"><div class="k">Paid to date</div><div class="v" id="s-paid">—</div></div>
+    <div class="stat"><div class="k">On payroll</div><div class="v" id="s-emp">—</div></div>
+    <div class="stat"><div class="k">Runway</div><div class="v" id="s-run">—</div></div>
+  </div>
+
+  <!-- market + liquidity --------------------------------------------------- -->
+  <div class="section-head"><h2>Market</h2><span class="note" id="mkt-note"></span></div>
+  <div class="co-split">
+
+    <div class="panel">
+      <div class="panel-head" id="chart-title">Price</div>
+      <div id="chart-slot">
+        <div class="chart-empty"><div class="big">Loading…</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:18px">
+        <div class="panel-head">Liquidity</div>
+        <div class="panel-body" id="lp-slot">
+          <p style="color:var(--ink-faint);font-size:13.5px;margin:0">Loading…</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Company facts</div>
+        <div class="panel-body" id="facts">
+          <div class="kv"><span class="k">Revenue rate</span><span class="v">4.00%</span></div>
+          <div class="kv"><span class="k">&nbsp;&nbsp;to payroll</span><span class="v">3.00%</span></div>
+          <div class="kv"><span class="k">&nbsp;&nbsp;to buyback</span><span class="v">1.00%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- leaderboard ---------------------------------------------------------- -->
+  <div class="section-head">
+    <h2>Longest serving</h2>
+    <span class="note">Seniority is served, not bought. It climbs 1&times; to 4&times; over three quarters, and resets if a position is closed.</span>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th class="num">Periods held</th>
+          <th class="num">Seniority</th>
+          <th class="num">Attendance</th>
+          <th class="num">Share of payroll</th>
+          <th class="num">Earned</th>
+        </tr>
+      </thead>
+      <tbody id="lb"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- cheques -------------------------------------------------------------- -->
+  <div class="section-head"><h2>Recent cheques</h2><span class="note">Wages issued by this company.</span></div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Employee</th><th class="num">Period</th><th class="num">Amount</th><th>Status</th></tr>
+      </thead>
+      <tbody id="cheques"><tr><td colspan="4" class="empty">No cheques issued yet.</td></tr></tbody>
+    </table>
+  </div>
+
+  <p class="hint" style="margin:26px 0 0;max-width:64ch;color:var(--ink-faint);font-size:13px">
+    Figures are read from the register and the chain. A company pays only what its
+    own trading earned. Nothing here is a forecast, a rate of return, or advice.
+  </p>
+</div>
+
+<footer>
+  <div class="wrap fin">
+    <span>Incorporate</span>
+    <a href="./">Registry</a>
+    <a href="file.html">File</a>
+    <a href="formation.html">Formation</a>
+    <a href="docs.html">Documentation</a>
+    <span class="muted" style="margin-left:auto">A company pays what it earns.</span>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="wallet.js"></script>
+<script src="company.js"></script>
+</body>
+</html>

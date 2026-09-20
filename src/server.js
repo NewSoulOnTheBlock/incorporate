@@ -221,8 +221,29 @@ const routes = {
     const r = await getLaunch.get(t);
     if (!r) return null;
     const miners = await minerView(t);
+
+    // Curve state, read live. A company on the curve has no DEX pair and no LP
+    // position to take -- the curve IS the liquidity -- so the page needs to
+    // know which half of its life this company is in before it renders either.
+    let curveState = null;
+    if (r.curve) {
+      try {
+        const c = curve(r.curve);
+        const [grad, reserve, target] = await Promise.all([
+          c.graduated(), c.quoteReserve(), c.graduationThreshold(),
+        ]);
+        curveState = {
+          graduated: grad,
+          reserveRaw: reserve.toString(),
+          targetRaw: target.toString(),
+          progressBps: target > 0n ? Number((reserve * 10_000n) / target) : 0,
+        };
+      } catch { curveState = null; }
+    }
+
     return {
       ...(await launchView(r)),
+      curveState,
       miners,
       minerCount: miners.length,
       epochs: await epochsFor.all(t, 60),

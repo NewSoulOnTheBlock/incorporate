@@ -37,16 +37,16 @@ const SAMPLE = {
     keeper: { state: "not-started", passes: 0 },
   },
   companies: [
-    { symbol: "ACME", name: "Acme Holdings",     graduated: true,  era: 2, emissionBps: 200, reserveMultiple: 50,  treasury: "412900000000000000",  paid: "1840000000000000000", decimals: 18, cur: "ETH",  employees: 31 },
-    { symbol: "MERID", name: "Meridian Freight", graduated: false, era: 0, emissionBps: 800, reserveMultiple: 13,  treasury: "86400000",            paid: "219600000",           decimals: 6,  cur: "USDG", employees: 12 },
-    { symbol: "HRBR",  name: "Harbour & Co.",    graduated: false, era: 1, emissionBps: 400, reserveMultiple: 25,  treasury: "97300000000000000",   paid: "402000000000000000",  decimals: 18, cur: "ETH",  employees: 8 },
-    { symbol: "LMDA",  name: "Lambda Works",     graduated: true,  era: 4, emissionBps: 50,  reserveMultiple: 200, treasury: "1290000000000000000", paid: "6110000000000000000", decimals: 18, cur: "ETH",  employees: 47 },
+    { token: "", symbol: "ACME", name: "Acme Holdings",     graduated: true,  era: 2, emissionBps: 200, reserveMultiple: 50,  treasury: "412900000000000000",  paid: "1840000000000000000", decimals: 18, cur: "ETH",  employees: 31 },
+    { token: "", symbol: "MERID", name: "Meridian Freight", graduated: false, era: 0, emissionBps: 800, reserveMultiple: 13,  treasury: "86400000",            paid: "219600000",           decimals: 6,  cur: "USDG", employees: 12 },
+    { token: "", symbol: "HRBR",  name: "Harbour & Co.",    graduated: false, era: 1, emissionBps: 400, reserveMultiple: 25,  treasury: "97300000000000000",   paid: "402000000000000000",  decimals: 18, cur: "ETH",  employees: 8 },
+    { token: "", symbol: "LMDA",  name: "Lambda Works",     graduated: true,  era: 4, emissionBps: 50,  reserveMultiple: 200, treasury: "1290000000000000000", paid: "6110000000000000000", decimals: 18, cur: "ETH",  employees: 47 },
   ],
   cheques: [
-    { symbol: "LMDA",  miner: "0x8a31c4de90b7f2a1cc4e6b9017d3f5a2e8b41c77", epoch: 118, amount_wei: "4120000000000000", decimals: 18, cur: "ETH",  status: "sent" },
-    { symbol: "ACME",  miner: "0x3f72b9ae1c08d45e6f1a9b2c7d8e3f04a5b6c7d8", epoch: 64,  amount_wei: "2870000000000000", decimals: 18, cur: "ETH",  status: "sent" },
-    { symbol: "MERID", miner: "0xbc41e7d2f9a06b38c5d1e4f7a2b9c8d3e6f05a1b", epoch: 9,   amount_wei: "1380000",          decimals: 6,  cur: "USDG", status: "sent" },
-    { symbol: "HRBR",  miner: "0x5d9e2a7c4f1b8036e9d2c5a8b7f4e1d0c3b6a9f2", epoch: 27,  amount_wei: "910000000000000",  decimals: 18, cur: "ETH",  status: "sent" },
+    { token: "", symbol: "LMDA",  miner: "0x8a31c4de90b7f2a1cc4e6b9017d3f5a2e8b41c77", epoch: 118, amount_wei: "4120000000000000", decimals: 18, cur: "ETH",  status: "sent" },
+    { token: "", symbol: "ACME",  miner: "0x3f72b9ae1c08d45e6f1a9b2c7d8e3f04a5b6c7d8", epoch: 64,  amount_wei: "2870000000000000", decimals: 18, cur: "ETH",  status: "sent" },
+    { token: "", symbol: "MERID", miner: "0xbc41e7d2f9a06b38c5d1e4f7a2b9c8d3e6f05a1b", epoch: 9,   amount_wei: "1380000",          decimals: 6,  cur: "USDG", status: "sent" },
+    { token: "", symbol: "HRBR",  miner: "0x5d9e2a7c4f1b8036e9d2c5a8b7f4e1d0c3b6a9f2", epoch: 27,  amount_wei: "910000000000000",  decimals: 18, cur: "ETH",  status: "sent" },
   ],
 };
 
@@ -82,7 +82,7 @@ function renderRegistry(rows) {
     return;
   }
   tb.innerHTML = rows.map((c) => `
-    <tr class="row">
+    <tr class="row"${c.token ? ` onclick="location.href='company.html?token=${c.token}'"` : ""}>
       <td><span class="tick">${c.symbol}</span></td>
       <td><span class="coname">${c.name}</span></td>
       <td><span class="pill ${c.graduated ? "public" : "private"}">${c.graduated ? "Public" : "Private round"}</span></td>
@@ -113,6 +113,7 @@ function renderFeed(rows) {
 /* Map the Registrar's launch shape onto the registry row the table wants. */
 function fromApi(l) {
   return {
+    token: l.token,
     symbol: l.symbol, name: l.name,
     graduated: l.graduated, era: l.era,
     emissionBps: l.emissionBps, reserveMultiple: l.reserveMultiple,
