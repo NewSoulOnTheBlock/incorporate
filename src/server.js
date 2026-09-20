@@ -27,7 +27,7 @@ import {
 import { minerCountFor, lastVaultFor } from "./db.js";
 import { reserveSalt, getReserved, useReserved, insertLaunch, setGraduated } from "./db.js";
 import { newSalt, vaultAddress } from "./vault.js";
-import { factory, erc20, provider } from "./chain.js";
+import { factory, erc20, provider, curve } from "./chain.js";
 import { PAIRS, NATIVE as NATIVE_ADDR } from "./pairs.js";
 import { FACTORY, CHAIN_ID, RPC_URL } from "./config.js";
 
@@ -238,7 +238,12 @@ const routes = {
           targetRaw: target.toString(),
           progressBps: target > 0n ? Number((reserve * 10_000n) / target) : 0,
         };
-      } catch { curveState = null; }
+      } catch (err) {
+        // Report rather than swallow: a transient RPC failure and a permanent
+        // coding error both land here, and they need very different responses.
+        console.error("curveState read failed for", r.token, err.message);
+        curveState = null;
+      }
     }
 
     return {
