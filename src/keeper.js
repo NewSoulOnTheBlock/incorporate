@@ -207,9 +207,7 @@ export async function pass() {
       if (err.info) log(`    info : ${JSON.stringify(err.info).slice(0, 400)}`);
       if (err.error) log(`    error: ${JSON.stringify(err.error).slice(0, 400)}`);
       if (err.sourceError) log(`    src  : ${String(err.sourceError).slice(0, 300)}`);
-      const line = (err.stack || "").split("
-")[1];
-      if (line) log(`    at   : ${line.trim().slice(0, 180)}`);
+      if (err.stack) log(`    stack: ${err.stack.slice(0, 320)}`);
     }
   }
   await beat.run(now());
