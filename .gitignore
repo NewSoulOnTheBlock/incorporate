@@ -8,3 +8,5 @@ data/
 
 .vercel
 .env*
+*.tmp
+.render-*
