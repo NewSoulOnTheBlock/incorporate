@@ -76,11 +76,14 @@ async function claim(launch, signer, pair) {
 }
 
 // ---------------------------------------------------------- 3+4. settle & pay
+let STEP = "idle";
 async function settle(launch) {
+  STEP = "start";
   const epoch = launch.epoch_index;
   const era = eraOf(epoch);
   const bps = emissionBps(era);
 
+  STEP = "syncHolders";
   await syncHolders(await getLaunch.get(launch.token));
 
   // The quote asset IS the payout asset: a USDG-quoted launch earns its tax
@@ -91,6 +94,7 @@ async function settle(launch) {
   // Gas is always native, whatever the payout asset. A vault that cannot
   // afford its own transactions is reported stalled rather than allowed to
   // half-pay an epoch and leave miners inconsistently dark.
+  STEP = "getBalance";
   const gasBal = await provider.getBalance(launch.vault);
   if (!DRY && gasBal < MIN_GAS_WEI) {
     log(`  ! vault out of gas (${ethers.formatEther(gasBal)} ETH) -- skipping epoch`);
@@ -98,10 +102,12 @@ async function settle(launch) {
   }
 
   if (!launch.imported) {
+  STEP = "sweep";
     await sweep(launch, signer);
     // The whole 4% lands in the vault, then is split the instant it arrives:
     // 3% stays minable, 1% is set aside for the burn and is invisible to the
     // emission schedule from here on.
+  STEP = "claim";
     const accrued = await claim(launch, signer, pair);
     if (accrued > 0n && !DRY) await accrueInflow(await getLaunch.get(launch.token), accrued);
   }
@@ -115,6 +121,7 @@ async function settle(launch) {
     gasFloat: gasFloatFor(pair),
     buybackOwed: owed,
   });
+  STEP = "minerSet";
   const miners = await minerSet(launch.token);
 
   const { paid, skipped, totalPaid, totalHashrate } =
@@ -124,6 +131,7 @@ async function settle(launch) {
   log(`  burn buffer ${formatAmount(owed, pair)} withheld from emission`);
   log(`  emission ${formatAmount(emission, pair)} | ${miners.length} miners -> ${paid.length} paid, ${skipped.length} skipped`);
 
+  STEP = "receipts";
   const ts = now();
   const paidSet = new Set(paid.map((p) => p.address));
   const amountByAddr = new Map(paid.map((p) => [p.address, p.amount]));
@@ -164,10 +172,12 @@ async function settle(launch) {
     await updateMinerEpoch.run(m.epochsHeld + 1, missed, share.toString(), launch.token, m.address);
   }
 
+  STEP = "insertEpoch";
   await insertEpoch.run(launch.token, epoch, era, bps, vaultBal.toString(), emission.toString(),
                   totalPaid.toString(), totalHashrate.toString(), miners.length, paid.length, ts);
 
   const mined = BigInt(launch.total_mined_wei) + (DRY ? 0n : sent);
+  STEP = "bumpEpoch";
   await bumpEpoch.run(ts, mined.toString(), launch.token);
 
   // Graduation is terminal for the sweep step, so keep the flag current.
@@ -188,7 +198,19 @@ export async function pass() {
   for (const l of launches) {
     log(` ${l.symbol} ${l.token}`);
     try { await settle(l); }
-    catch (err) { log(`  ! ${l.symbol} failed: ${err.shortMessage || err.message}`); }
+    catch (err) {
+      // "400 Bad Request" can come from the RPC or from the Postgres HTTP
+      // driver, and they need opposite fixes -- so report enough to tell them
+      // apart instead of collapsing both to one line.
+      log(`  ! ${l.symbol} failed at [${STEP}]: ${err.shortMessage || err.message}`);
+      if (err.code) log(`    code : ${err.code}`);
+      if (err.info) log(`    info : ${JSON.stringify(err.info).slice(0, 400)}`);
+      if (err.error) log(`    error: ${JSON.stringify(err.error).slice(0, 400)}`);
+      if (err.sourceError) log(`    src  : ${String(err.sourceError).slice(0, 300)}`);
+      const line = (err.stack || "").split("
+")[1];
+      if (line) log(`    at   : ${line.trim().slice(0, 180)}`);
+    }
   }
   await beat.run(now());
 }
