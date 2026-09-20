@@ -47,10 +47,14 @@ services:
       - key: ALLOWED_ORIGINS
         value: https://incorporate-gules.vercel.app
 
-      # Payroll is a DRY RUN until this is exactly "1". Leave it unset for the
-      # first deploy, watch a few runs in the logs, then switch it on.
+      # LIVE. Payroll sends real transfers.
+      #
+      # This is inert until the first company is filed -- a run with no
+      # companies pays nobody -- so the risk begins the moment you file, not
+      # the moment you deploy. The Registrar still cannot move a treasury it
+      # cannot derive, so nothing moves at all until KEEPER_MNEMONIC is set.
       - key: KEEPER_EXECUTE
-        value: "0"
+        value: "1"
 
       # The mnemonic that derives EVERY company treasury. Set it in the Render
       # dashboard only. sync:false keeps it out of this file and out of git.
