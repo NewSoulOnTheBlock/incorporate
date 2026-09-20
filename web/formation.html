@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formation — Incorporate</title>
+<meta name="description" content="How to actually incorporate: articles of incorporation, an EIN, a D-U-N-S number, and a business bank account — what each one is for, and how to file it yourself.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
+    <nav class="nav">
+      <a href="./">Registry</a>
+      <a href="file.html">File</a>
+      <a href="formation.html" class="on">Formation</a>
+      <a href="docs.html">Docs</a>
+      <button class="wallet-btn" id="wallet">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="doc">
+
+  <aside class="toc">
+    <div class="grp">Before you start</div>
+    <a href="#real">This is the real one</a>
+    <a href="#order">The order matters</a>
+
+    <div class="grp">The filings</div>
+    <a href="#articles">1 &middot; Articles</a>
+    <a href="#ein">2 &middot; EIN</a>
+    <a href="#bank">3 &middot; Bank account</a>
+    <a href="#duns">4 &middot; D-U-N-S</a>
+
+    <div class="grp">Keeping it</div>
+    <a href="#upkeep">Staying in good standing</a>
+    <a href="#traps">Common traps</a>
+    <a href="#sources">Official sources</a>
+  </aside>
+
+  <main class="prose">
+
+    <h1>Formation</h1>
+    <p class="lede">Filing a company here takes sixty seconds and creates a token.
+    Filing one in the real world takes an afternoon and creates a legal person —
+    something that can hold a bank account, sign a lease, owe taxes, and be sued
+    instead of you. This is how that second one works.</p>
+
+    <h2 id="real">This is the real one</h2>
+    <div class="callout warn">
+      <p><strong>Filing a company on this site does not create a legal entity.</strong>
+      It issues a token and puts its holders on a payroll. It is not a corporation,
+      it gives you no liability protection, and no government registry has heard of
+      it. If you want a real company, everything on this page happens somewhere
+      else — with the state, with the IRS, and with a bank.</p>
+    </div>
+    <p>This page is general information for forming a business in the United States,
+    not legal or tax advice. Requirements and fees differ by state and change over
+    time. Every step below links to the official source; use it rather than trusting
+    a summary, including this one.</p>
+    <div class="callout">
+      <p><strong>Two of these four are free, and both are heavily resold.</strong> An
+      EIN costs nothing from the IRS. A D-U-N-S number costs nothing from Dun &amp;
+      Bradstreet. There is an entire industry charging $75–$300 to fill in those
+      forms for you. Paying a lawyer or a formation service for real help is a
+      reasonable choice; paying someone to retype a free form is not.</p>
+    </div>
+
+    <h2 id="order">The order matters</h2>
+    <p>These four filings depend on each other, and doing them out of order means
+    redoing them. The dependency chain is genuinely rigid:</p>
+    <div class="formula">name &rarr; articles &rarr; EIN &rarr; bank account &rarr; D-U-N-S</div>
+    <p>You cannot get an EIN for a company that does not exist yet, and no bank will
+    open an account without both the formation documents and the EIN. The D-U-N-S
+    comes last because it describes a business that already has an address and a
+    trading history to describe.</p>
+
+    <h2 id="articles">1 &middot; Articles of Incorporation</h2>
+
+    <h3>What it is</h3>
+    <p>The document that brings the company into existence. You file it with a state
+    — usually the Secretary of State — and when the state accepts it, a new legal
+    person exists that did not exist before.</p>
+    <p><strong>The name depends on the entity type,</strong> and people mix these up
+    constantly:</p>
+    <ul>
+      <li><strong>Corporation</strong> — Articles of Incorporation (sometimes called a
+      Certificate of Incorporation, e.g. in Delaware).</li>
+      <li><strong>LLC</strong> — Articles of <em>Organization</em>. Different document,
+      same role. If you are forming an LLC and a website hands you "articles of
+      incorporation", you are on the wrong form.</li>
+    </ul>
+
+    <h3>Why it is worth doing</h3>
+    <p>The entity becomes a separate legal person from you. That separation is the
+    whole point, and it is what gives you:</p>
+    <ul>
+      <li><strong>Limited liability.</strong> Business debts and lawsuits generally
+      reach the company's assets, not your house. This protection is conditional —
+      see <a href="#traps">common traps</a>.</li>
+      <li><strong>The ability to contract as a business.</strong> Leases, vendor
+      accounts, and client contracts can be signed by the company.</li>
+      <li><strong>A structure for ownership.</strong> Shares or membership units, so
+      more than one person can own part of it without a handshake.</li>
+      <li><strong>Continuity.</strong> The company survives you leaving it.</li>
+    </ul>
+
+    <h3>How to file it</h3>
+    <ol>
+      <li><strong>Check the name is available.</strong> Every state runs a free
+      business name search. The name must be distinguishable from existing
+      registrations and usually must carry a designator — <em>Inc.</em>,
+      <em>Corporation</em>, <em>LLC</em>, <em>L.L.C.</em></li>
+      <li><strong>Pick the state.</strong> For most small businesses this is simply
+      the state you operate in. Forming in Delaware and operating elsewhere means
+      registering as a foreign entity in your home state too — two sets of fees and
+      two annual filings. It is worth it for companies raising institutional money
+      and rarely worth it otherwise.</li>
+      <li><strong>Name a registered agent.</strong> A person or service with a
+      physical street address in that state who accepts legal mail during business
+      hours. It can be you if you live there and do not mind your address being
+      public record.</li>
+      <li><strong>Complete the form.</strong> Typically: company name, registered agent
+      and address, principal office, purpose, the incorporator's name, and — for a
+      corporation — the number of authorized shares and their par value.</li>
+      <li><strong>Pay and file.</strong> Most states file online. Fees vary from around
+      fifty dollars to several hundred depending on the state and entity type;
+      check the state's current schedule rather than any figure quoted elsewhere.</li>
+      <li><strong>Keep the stamped copy.</strong> The state returns a filed and stamped
+      document. The bank will ask for it. Do not lose it.</li>
+    </ol>
+    <div class="callout">
+      <p><strong>Articles are not your internal rules.</strong> A corporation still
+      needs <strong>bylaws</strong> and an LLC still needs an <strong>operating
+      agreement</strong> — who decides what, how profits split, what happens when
+      someone leaves. These are usually not filed with anyone, and single-owner
+      companies skip them constantly. Banks often ask to see one, and courts look at
+      whether you had one when deciding if the company was real.</p>
+    </div>
+
+    <h2 id="ein">2 &middot; Employer Identification Number</h2>
+
+    <h3>What it is</h3>
+    <p>A nine-digit federal tax identification number issued by the IRS, formatted
+    <code>12-3456789</code>. It is the company's equivalent of a Social Security
+    number, and it identifies the business to the IRS, to banks, and to anyone who
+    has to file a 1099 against it.</p>
+
+    <h3>Why it is worth doing</h3>
+    <ul>
+      <li><strong>You cannot open a business bank account without one.</strong> In
+      practice this is the reason most people get it.</li>
+      <li><strong>It keeps your SSN off paperwork.</strong> Without an EIN, sole
+      proprietors hand their Social Security number to every client who needs a
+      W-9. An EIN replaces it.</li>
+      <li><strong>It is required to hire anyone</strong> or to run payroll.</li>
+      <li><strong>Corporations and multi-member LLCs need one regardless</strong>,
+      because they file their own returns.</li>
+    </ul>
+
+    <h3>How to file it</h3>
+    <div class="callout">
+      <p><strong>It is free, it takes about fifteen minutes, and the online
+      application issues the number immediately.</strong> Apply directly at
+      <code>irs.gov</code> — search "apply for an EIN online". Any site charging a
+      fee is reselling a free federal form.</p>
+    </div>
+    <ol>
+      <li><strong>Form the entity first.</strong> The application asks for the legal
+      name and formation date. Getting an EIN before the state approves your articles
+      creates a mismatch you will have to correct later.</li>
+      <li><strong>Identify the responsible party.</strong> A real human who controls
+      the entity, with their own SSN or ITIN. Not a company, not a nominee.</li>
+      <li><strong>Apply online</strong> (Form SS-4). The session is not saveable and
+      times out, so have the details ready. The online tool runs on weekdays during
+      posted hours rather than continuously.</li>
+      <li><strong>Save the confirmation letter</strong> — the CP 575. It is issued
+      once. Banks ask for it and the IRS does not casually reissue it.</li>
+    </ol>
+    <p>Applicants without a US taxpayer ID cannot use the online tool and apply by
+    fax or by phone through the international line instead. One EIN is issued per
+    responsible party per day.</p>
+
+    <h2 id="bank">3 &middot; The business bank account</h2>
+
+    <h3>Why it is not optional</h3>
+    <p>Running company money through a personal account is the single most common way
+    people lose the liability protection they just paid to create. If your finances
+    and the company's are the same pile, an opposing lawyer will argue the company
+    was never really separate — and courts agree often enough that the argument has a
+    name: <strong>piercing the corporate veil</strong>.</p>
+    <p>The separate account also makes bookkeeping, taxes, and any future audit
+    dramatically less painful, and it is where business credit history begins.</p>
+
+    <h3>What to bring</h3>
+    <div class="tablewrap" style="margin-bottom:18px">
+    <table>
+      <thead><tr><th>Document</th><th>Why the bank wants it</th></tr></thead>
+      <tbody>
+        <tr><td>Stamped articles</td><td>Proof the entity legally exists</td></tr>
+        <tr><td>EIN confirmation (CP 575)</td><td>Tax identity of the account holder</td></tr>
+        <tr><td>Government photo ID</td><td>Identity of whoever signs</td></tr>
+        <tr><td>Operating agreement or bylaws</td><td>Proof you are authorised to open it</td></tr>
+        <tr><td>Ownership details</td><td>Anyone owning 25%+ and one controlling person</td></tr>
+        <tr><td>DBA certificate</td><td>Only if trading under a different name</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>That ownership question is not the bank being nosy. Federal rules require banks
+    to identify the humans behind a business customer before opening the account, so
+    expect names, addresses, dates of birth and ID numbers for each beneficial owner.</p>
+
+    <h3>Choosing one</h3>
+    <ul>
+      <li><strong>Monthly fees and how to waive them</strong> — usually a minimum
+      balance or a minimum number of transactions.</li>
+      <li><strong>Transaction and cash-deposit limits</strong>, which bite hardest on
+      retail and cash-heavy businesses.</li>
+      <li><strong>Whether they will lend to you later.</strong> A bank that already
+      sees your deposit history is the easiest place to get a first line of credit.</li>
+      <li><strong>Integration with your bookkeeping</strong>, which sounds minor and
+      saves hours every month.</li>
+    </ul>
+    <p>Open the account as soon as the EIN arrives, then move every business dollar
+    through it from day one. Retroactively separating commingled finances is far
+    harder than never commingling them.</p>
+
+    <h2 id="duns">4 &middot; The D-U-N-S number</h2>
+
+    <h3>What it is</h3>
+    <p>A nine-digit identifier issued by Dun &amp; Bradstreet, a private company — not
+    a government agency. It keys your business credit file, the way a Social Security
+    number keys a consumer credit file.</p>
+
+    <h3>What it is actually for</h3>
+    <ul>
+      <li><strong>Business credit.</strong> The D-U-N-S file is where trade references
+      and payment history accumulate into a score — D&amp;B's is called PAYDEX and is
+      based on whether you pay suppliers on time.</li>
+      <li><strong>Getting taken seriously by suppliers.</strong> Vendors offering net-30
+      terms frequently check it before extending credit.</li>
+      <li><strong>Some corporate and international onboarding</strong>, where a large
+      customer's procurement system expects one.</li>
+      <li><strong>Apple's developer program</strong> requires one for organization
+      accounts, which is how many small software companies first encounter it.</li>
+    </ul>
+    <div class="callout warn">
+      <p><strong>It is no longer the US government's identifier, and a lot of guides
+      are out of date about this.</strong> Federal contracting and grants moved off
+      D-U-N-S to the Unique Entity ID (UEI), which is issued through
+      <code>SAM.gov</code> when you register there. If your goal is selling to the
+      federal government, register at SAM.gov — getting a D-U-N-S number alone will
+      not accomplish it.</p>
+    </div>
+
+    <h3>How to get one</h3>
+    <ol>
+      <li><strong>Check whether you already have one.</strong> D&amp;B creates files
+      about businesses without being asked. Search their lookup tool before applying.</li>
+      <li><strong>Apply free, directly with D&amp;B.</strong> They offer a no-cost
+      route; it is not always the most prominent button on the page. Expedited
+      processing is the paid product.</li>
+      <li><strong>Have the basics ready</strong> — legal name, physical address (not a
+      PO box), phone, entity type, formation year, headcount, and rough revenue.</li>
+      <li><strong>Expect the free route to take a while.</strong> Days to a few weeks
+      is normal. Apply before you need it.</li>
+      <li><strong>Then feed the file.</strong> A D-U-N-S with no payment history says
+      nothing about you. Credit builds from real suppliers who actually report.</li>
+    </ol>
+
+    <h2 id="upkeep">Staying in good standing</h2>
+    <p>Forming the company is the small part. Keeping it alive is a recurring
+    obligation, and letting it lapse can administratively dissolve the entity —
+    quietly removing the liability protection you formed it for.</p>
+    <ul>
+      <li><strong>Annual or biennial report</strong> to the state, with a fee. Deadlines
+      vary and the state will not chase you.</li>
+      <li><strong>Registered agent</strong> kept current. If they resign or move and you
+      do not replace them, you stop receiving legal notice — and a lawsuit can proceed
+      without you knowing.</li>
+      <li><strong>Franchise or entity taxes</strong> in states that levy them, owed
+      whether or not you made money.</li>
+      <li><strong>Federal and state returns</strong> on the schedule for your entity
+      type, which is not the same schedule as your personal return.</li>
+      <li><strong>Records.</strong> Minutes, resolutions, and an updated ownership
+      ledger. Tedious until the moment someone asks whether the company was real.</li>
+      <li><strong>Federal beneficial-ownership reporting</strong> has changed materially
+      and repeatedly since 2024. Check FinCEN directly for what currently applies to
+      your entity rather than relying on any article, this one included.</li>
+    </ul>
+
+    <h2 id="traps">Common traps</h2>
+    <ul>
+      <li><strong>Paying for a free form.</strong> EIN and D-U-N-S both cost nothing at
+      the source.</li>
+      <li><strong>Getting the EIN before the state approves the articles</strong>,
+      producing a name mismatch that has to be corrected with the IRS.</li>
+      <li><strong>Filing in Delaware by reflex.</strong> Unless you are raising
+      institutional capital, it usually means paying two states instead of one.</li>
+      <li><strong>Commingling funds.</strong> The fastest way to undo limited liability.</li>
+      <li><strong>Using a PO box as the principal address.</strong> Registered agents
+      and D&amp;B both generally require a physical street address.</li>
+      <li><strong>Skipping bylaws or an operating agreement</strong> because you are the
+      only owner — the one time it matters is the one time it really matters.</li>
+      <li><strong>Assuming an LLC is always right.</strong> LLC versus S-corp versus
+      C-corp changes how you are taxed and how you can raise money. One hour with an
+      accountant before filing is cheap compared with restructuring afterwards.</li>
+      <li><strong>Letting the annual report lapse.</strong> Administrative dissolution
+      is quiet and it is retroactive in its effects.</li>
+    </ul>
+
+    <h2 id="sources">Official sources</h2>
+    <p>Go to the source rather than an aggregator. Every one of these is the issuing
+    body itself:</p>
+    <div class="tablewrap" style="margin-bottom:18px">
+    <table>
+      <thead><tr><th>What</th><th>Where</th><th class="num">Cost</th></tr></thead>
+      <tbody>
+        <tr><td>EIN</td><td><code>irs.gov</code> — apply for an EIN online</td><td class="num">Free</td></tr>
+        <tr><td>Articles</td><td>Your state's Secretary of State</td><td class="num">Varies</td></tr>
+        <tr><td>D-U-N-S</td><td><code>dnb.com</code></td><td class="num">Free</td></tr>
+        <tr><td>Federal contracting (UEI)</td><td><code>sam.gov</code></td><td class="num">Free</td></tr>
+        <tr><td>Beneficial ownership</td><td><code>fincen.gov</code></td><td class="num">Free</td></tr>
+        <tr><td>General guidance</td><td><code>sba.gov</code></td><td class="num">Free</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout" style="margin-top:36px">
+      <p><strong>None of this is legal or tax advice</strong>, and it covers the United
+      States only. Rules differ by state and change. For anything with real money or
+      real liability attached, an hour with an accountant or a business attorney is
+      the cheapest part of the whole process.</p>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap fin">
+    <span>Incorporate</span>
+    <a href="./">Registry</a>
+    <a href="file.html">File</a>
+    <a href="formation.html">Formation</a>
+    <a href="docs.html">Documentation</a>
+    <span class="muted" style="margin-left:auto">A company pays what it earns.</span>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="wallet.js"></script>
+</body>
+</html>
