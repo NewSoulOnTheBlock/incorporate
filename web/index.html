@@ -19,8 +19,9 @@
     <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
     <nav class="nav">
       <a href="./" class="on">Registry</a>
-      <a href="#file" class="hide-sm">File</a>
+      <a href="file.html">File</a>
       <a href="docs.html">Docs</a>
+      <button class="wallet-btn" id="wallet">Connect wallet</button>
     </nav>
   </div>
 </header>
@@ -33,7 +34,7 @@
     Three of those four points are wages, paid automatically to everyone holding,
     every sixty seconds. No staking. No claiming. A company pays what it earns.</p>
     <div class="cta">
-      <a class="btn" href="#file">File a company</a>
+      <a class="btn" href="file.html">File a company</a>
       <a class="btn ghost" href="docs.html">Read the documentation</a>
     </div>
   </div>
@@ -111,24 +112,17 @@
 
   <div class="section-head" id="file">
     <h2>File a company</h2>
-    <span class="note">Filing is done from the command line against the registry contract.</span>
+    <span class="note">Connect a wallet, fill in the details, sign the filing.</span>
   </div>
   <div class="card">
-    <p style="margin:0 0 14px;color:var(--ink-soft)">The treasury address is written
-    into the company at filing and can never be changed afterwards, so filing runs
-    locally where you control the founder key — never in a web page.</p>
-<pre><code>git clone &lt;this repo&gt; &amp;&amp; cd incorporate
-npm install
-cp .env.example .env          # set FOUNDER key + REGISTRAR mnemonic
-
-node src/cli.js doctor        # read live registry state
-node src/cli.js pairs         # list approved share currencies
-NAME="Acme Holdings" SYMBOL=ACME node src/cli.js launch
-PAIR=USDG node src/cli.js launch          # denominate in a stablecoin</code></pre>
-    <p style="margin:14px 0 0;color:var(--ink-faint);font-size:13.5px">
-    Filing is a dry run unless you set the execute flag. Fund the treasury with a
-    little native coin for transaction costs before the first payroll run, and do not
-    buy your own company in the first few seconds — an anti-sniping rate applies.</p>
+    <p style="margin:0 0 16px;color:var(--ink-soft)">Choose a name, ticker, logo,
+    socials and share currency, then sign the filing from your own wallet. The
+    registry never sees your key — it only reserves the treasury address that
+    gets written into the company, which is immutable once filed.</p>
+    <a class="btn" href="file.html">Open the filing form</a>
+    <p style="margin:16px 0 0;color:var(--ink-faint);font-size:13.5px">
+    Prefer the terminal? <code>node src/cli.js launch</code> does the same thing
+    against the same contract.</p>
   </div>
 
   <div class="section-head">
@@ -160,6 +154,7 @@ PAIR=USDG node src/cli.js launch          # denominate in a stablecoin</code></p
 </footer>
 
 <script src="config.js"></script>
+<script src="wallet.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

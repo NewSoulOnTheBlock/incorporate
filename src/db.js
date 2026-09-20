@@ -99,6 +99,18 @@ CREATE TABLE IF NOT EXISTS buybacks (
   created_at   INTEGER NOT NULL
 );
 
+-- Treasuries handed out to the filing form but not yet used by a company.
+-- The dapp must know its treasury address BEFORE it can sign, because
+-- creatorFeeRecipient is immutable once the company exists. Recording the
+-- salt here is what lets the Registrar later prove a submitted company really
+-- is one of ours, rather than trusting whatever the browser posts back.
+CREATE TABLE IF NOT EXISTS reserved_salts (
+  salt       TEXT PRIMARY KEY,
+  vault      TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  used_by    TEXT
+);
+
 CREATE TABLE IF NOT EXISTS keeper_heartbeat (
   id        INTEGER PRIMARY KEY CHECK (id = 1),
   last_pass INTEGER NOT NULL,
@@ -193,6 +205,12 @@ export const pendingBuybacks = db.prepare(`
   FROM launches WHERE buyback_owed != '0'`);
 export const recentBuybacks = db.prepare(`
   SELECT * FROM buybacks ORDER BY created_at DESC LIMIT ?`);
+
+export const reserveSalt = db.prepare(`
+  INSERT INTO reserved_salts (salt,vault,created_at) VALUES (?,?,?)`);
+export const getReserved = db.prepare(`SELECT * FROM reserved_salts WHERE salt = ?`);
+export const useReserved = db.prepare(`
+  UPDATE reserved_salts SET used_by = ? WHERE salt = ?`);
 
 export const beat = db.prepare(`
   INSERT INTO keeper_heartbeat (id,last_pass,passes) VALUES (1,?,1)

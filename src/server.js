@@ -25,6 +25,11 @@ import {
   epochsFor, minerPositions, readBeat, now,
 } from "./db.js";
 import { minerCountFor, lastVaultFor } from "./db.js";
+import { reserveSalt, getReserved, useReserved, insertLaunch, setGraduated } from "./db.js";
+import { newSalt, vaultAddress } from "./vault.js";
+import { factory, erc20, provider } from "./chain.js";
+import { PAIRS, NATIVE as NATIVE_ADDR } from "./pairs.js";
+import { FACTORY, CHAIN_ID, RPC_URL } from "./config.js";
 
 const PORT = Number(process.env.PORT || 8787);
 
@@ -43,7 +48,7 @@ function corsHeaders(origin) {
   if (!allow) return null;
   return {
     "access-control-allow-origin": allow,
-    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "accept, content-type",
     "access-control-max-age": "86400",
     ...(allow === "*" ? {} : { vary: "Origin" }),
@@ -166,6 +171,44 @@ const routes = {
 
   "/api/launches": () => allLaunches.all().map(launchView),
 
+  // Everything the filing form needs to build a transaction. Served from the
+  // Registrar rather than hardcoded in the page so the address book has one
+  // source of truth.
+  "/api/chain": () => ({
+    chainId: CHAIN_ID,
+    chainIdHex: "0x" + CHAIN_ID.toString(16),
+    rpcUrl: RPC_URL,
+    factory: FACTORY,
+    creatorTaxBps: CREATOR_TAX_BPS,
+    configId: 0,
+    explorer: "https://explorer.mainnet.chain.robinhood.com",
+  }),
+
+  "/api/pairs": () => PAIRS.map((p) => ({
+    symbol: p.symbol, address: p.address, decimals: p.decimals,
+    native: p.native, label: p.label,
+  })),
+
+  // Reserve a treasury for a company that does not exist yet.
+  //
+  // Returns an ADDRESS and a public salt -- never a key. The address must be
+  // known before signing because creatorFeeRecipient is immutable once the
+  // company is filed, so this has to happen before the wallet is asked to
+  // sign anything.
+  "/api/reserve-treasury": () => {
+    let salt, vault;
+    try {
+      salt = newSalt();
+      vault = vaultAddress(salt);
+    } catch (err) {
+      // No mnemonic configured: say so plainly rather than handing back a
+      // treasury nobody can ever spend from.
+      return { error: "registrar-not-configured", detail: err.message };
+    }
+    reserveSalt.run(salt, vault.toLowerCase(), now());
+    return { salt, vault };
+  },
+
   "/api/feed": (u) =>
     feedReceipts.all(Number(u.searchParams.get("limit") || 40)).map((r) => ({
       ...r,
@@ -224,6 +267,106 @@ const routes = {
   },
 };
 
+/* Writes. Kept to the minimum the filing flow needs, and each one validated
+ * against the chain rather than trusted from the browser. */
+const writeRoutes = {
+  /**
+   * Pin a company logo to IPFS and return its gateway URL.
+   *
+   * The logo is written into the company on-chain as a URL string, so it has
+   * to live somewhere permanent before the founder signs -- a link that rots
+   * cannot be corrected afterwards. IPFS is the right home for that; storing
+   * it on the Registrar would not be, because this instance has no persistent
+   * disk and would lose the file on the next restart.
+   *
+   * Requires PINATA_JWT. Without it this says so plainly and the form falls
+   * back to asking for a URL, rather than accepting a file it cannot keep.
+   */
+  "/api/pin": async (body) => {
+    const jwt = process.env.PINATA_JWT;
+    if (!jwt) return { error: "pinning-not-configured" };
+
+    const dataUri = String(body.dataUri || "");
+    const m = dataUri.match(/^data:([\w.+-]+\/[\w.+-]+);base64,(.+)$/);
+    if (!m) return { error: "bad-image" };
+    const [, mime, b64] = m;
+    if (!/^image\//.test(mime)) return { error: "not-an-image" };
+
+    const bytes = Buffer.from(b64, "base64");
+    if (bytes.length > 5_000_000) return { error: "image-too-large" };
+
+    const form = new FormData();
+    form.append("file", new Blob([bytes], { type: mime }),
+                String(body.filename || "logo").slice(0, 64));
+
+    const r = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method: "POST",
+      headers: { authorization: `Bearer ${jwt}` },
+      body: form,
+    });
+    if (!r.ok) return { error: "pin-failed", status: r.status };
+    const j = await r.json();
+    return { cid: j.IpfsHash, url: `https://gateway.pinata.cloud/ipfs/${j.IpfsHash}` };
+  },
+
+  /**
+   * Record a company the dapp just filed.
+   *
+   * The browser is not trusted here. Before anything is written we read the
+   * company back from the factory and require that its creatorFeeRecipient is
+   * exactly the treasury we derived for that salt. A caller who invents a
+   * token address, or points at someone else's company, fails that check.
+   */
+  "/api/index-filing": async (body) => {
+    const token = String(body.token || "").toLowerCase();
+    const salt = String(body.salt || "");
+    if (!ethers.isAddress(token)) return { error: "bad-token" };
+
+    const reserved = getReserved.get(salt);
+    if (!reserved) return { error: "unknown-salt" };
+    if (reserved.used_by) return { error: "salt-already-used", token: reserved.used_by };
+
+    let expected;
+    try { expected = vaultAddress(salt); }
+    catch (err) { return { error: "registrar-not-configured", detail: err.message }; }
+
+    let curveAddr = null, recipient = null, graduated = 0;
+    try {
+      const g = await factory.getLaunchedToken(token);
+      curveAddr = g[1]; recipient = g[2]; graduated = g[3] ? 1 : 0;
+    } catch {
+      return { error: "not-a-registry-company" };
+    }
+    if (!recipient || recipient.toLowerCase() !== expected.toLowerCase()) {
+      return { error: "treasury-mismatch", expected, found: recipient };
+    }
+
+    const t = erc20(token);
+    let name = body.name || "", symbol = body.symbol || "";
+    try { [name, symbol] = await Promise.all([t.name(), t.symbol()]); } catch {}
+
+    const pair = resolvePair(body.pairToken || NATIVE_ADDR);
+    const block = await provider.getBlockNumber().catch(() => 0);
+
+    insertLaunch.run(
+      token, name, symbol, body.description || "", body.image || "",
+      curveAddr ? curveAddr.toLowerCase() : null,
+      pair.address.toLowerCase(), pair.symbol, pair.decimals,
+      String(body.creator || "").toLowerCase(), CREATOR_TAX_BPS,
+      expected.toLowerCase(), salt, 0, now(), block, block);
+
+    useReserved.run(token, salt);
+    setGraduatedIfKnown(token, graduated);
+    return { ok: true, token, vault: expected, curve: curveAddr };
+  },
+};
+
+// setGraduated is optional depending on build; guard it so indexing never
+// fails on a cosmetic field.
+function setGraduatedIfKnown(token, graduated) {
+  try { setGraduated.run(graduated, token); } catch {}
+}
+
 async function serveStatic(pathname, res) {
   const rel = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   // normalize() then a prefix check: the classic ../ escape has to be closed
@@ -259,6 +402,38 @@ createServer(async (req, res) => {
     res.writeHead(204, cors).end();
     return;
   }
+  if (req.method === "POST") {
+    const write = writeRoutes[u.pathname];
+    if (!write) {
+      res.writeHead(404, { ...cors, "content-type": "application/json" })
+         .end(J({ error: "not found" }));
+      return;
+    }
+    try {
+      // Filing payloads are small; cap the body so a hostile client cannot
+      // make the Registrar buffer an unbounded request.
+      let raw = "", tooBig = false;
+      for await (const chunk of req) {
+        raw += chunk;
+        if (raw.length > (u.pathname === "/api/pin" ? 8_000_000 : 64_000)) { tooBig = true; break; }
+      }
+      if (tooBig) {
+        res.writeHead(413, { ...cors, "content-type": "application/json" })
+           .end(J({ error: "payload-too-large" }));
+        return;
+      }
+      const body = raw ? JSON.parse(raw) : {};
+      const data = await write(body);
+      res.writeHead(data && data.error ? 400 : 200,
+                    { ...cors, "content-type": "application/json", "cache-control": "no-store" })
+         .end(J(data));
+    } catch (err) {
+      res.writeHead(500, { ...cors, "content-type": "application/json" })
+         .end(J({ error: err.message }));
+    }
+    return;
+  }
+
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.writeHead(405, { ...cors, "content-type": "application/json" })
        .end(J({ error: "read-only api" }));

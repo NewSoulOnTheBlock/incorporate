@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>File a company — Incorporate</title>
+<meta name="description" content="File a company: choose its name, ticker, logo, socials and share currency, then sign the filing from your own wallet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="banner" id="banner" hidden></div>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
+    <nav class="nav">
+      <a href="./">Registry</a>
+      <a href="file.html" class="on">File</a>
+      <a href="docs.html">Docs</a>
+      <button class="wallet-btn" id="wallet">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:44px;padding-bottom:90px">
+
+  <div class="eyebrow">Articles of incorporation</div>
+  <h1 style="font-family:var(--serif);font-weight:500;font-size:clamp(32px,5vw,46px);letter-spacing:-.025em;margin:0 0 10px;line-height:1.08">
+    File a company
+  </h1>
+  <p style="color:var(--ink-soft);max-width:64ch;margin:0 0 30px">
+    Every trade of its shares pays the company 4% revenue. Three points go to
+    everyone holding, one buys back and retires <code>$INC</code>. You sign the
+    filing yourself — the registry never sees your key.
+  </p>
+
+  <div class="steps">
+    <div class="step on" id="st1">1 &nbsp;Connect</div>
+    <div class="step" id="st2">2 &nbsp;Details</div>
+    <div class="step" id="st3">3 &nbsp;Sign</div>
+  </div>
+
+  <div class="form">
+
+    <!-- ---------------------------------------------------------- details -->
+    <div class="row2">
+      <div class="field">
+        <label for="f-name">Company name</label>
+        <input type="text" id="f-name" maxlength="42" placeholder="Acme Holdings" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-sym">Ticker</label>
+        <input type="text" id="f-sym" class="mono-in" maxlength="11" placeholder="ACME" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-desc">What the company does</label>
+      <textarea id="f-desc" maxlength="500" placeholder="One or two lines. Written into the company on-chain."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Logo</label>
+      <div class="logo-pick">
+        <div class="logo-prev" id="prev">no<br>logo</div>
+        <div class="logo-fields">
+          <input type="file" id="f-file" accept="image/*" style="font-size:13px;margin-bottom:8px">
+          <input type="url" id="f-logo" placeholder="…or paste an image URL" autocomplete="off">
+          <div class="hint" id="logo-hint">The logo is written into the company as a URL and can never be
+          changed, so it needs a permanent home. Upload pins to IPFS.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-pair">Share currency</label>
+      <select id="f-pair"><option>Loading…</option></select>
+      <div class="hint" id="pair-hint">The currency a company trades in is the currency it pays in.</div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="f-web">Website</label>
+        <input type="url" id="f-web" placeholder="https://" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-tw">X / Twitter</label>
+        <input type="text" id="f-tw" placeholder="@handle" autocomplete="off">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="f-tg">Telegram</label>
+        <input type="text" id="f-tg" placeholder="t.me/…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-dc">Discord</label>
+        <input type="text" id="f-dc" placeholder="discord.gg/…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-buy">Founder's opening position <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="number" id="f-buy" min="0" step="0.001" placeholder="0.0" autocomplete="off">
+      <div class="hint warn" id="buy-hint">An anti-sniping rate applies for the first few seconds after
+      filing — do not buy your own company immediately after it lands.</div>
+    </div>
+
+    <!-- ----------------------------------------------------------- review -->
+    <div class="section-head" style="margin-top:36px"><h2>Review</h2></div>
+    <div class="review" id="review">
+      <div class="line"><span class="k">Revenue rate</span><span class="v">4.00% — 3% payroll / 1% buyback</span></div>
+      <div class="line"><span class="k">Treasury</span><span class="v" id="r-vault">reserved when you sign</span></div>
+      <div class="line"><span class="k">Filing fee</span><span class="v" id="r-fee">—</span></div>
+      <div class="line"><span class="k">Opening position</span><span class="v" id="r-buy">0</span></div>
+      <div class="line"><span class="k">Total to send</span><span class="v" id="r-total">—</span></div>
+      <div class="line"><span class="k">Founder</span><span class="v" id="r-from">not connected</span></div>
+    </div>
+
+    <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" id="submit" disabled>Connect a wallet first</button>
+      <a class="btn ghost" href="docs.html#filing">What am I signing?</a>
+    </div>
+
+    <div class="status" id="status" hidden></div>
+
+    <p class="hint" style="margin-top:26px;max-width:62ch">
+      The treasury address is written into the company at filing and can never be
+      changed. It is reserved from the Registrar immediately before you sign, so
+      the company and its payroll are bound together from the first block.
+    </p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap fin">
+    <span>Incorporate</span>
+    <a href="./">Registry</a>
+    <a href="file.html">File</a>
+    <a href="docs.html">Documentation</a>
+    <span class="muted" style="margin-left:auto">A company pays what it earns.</span>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script type="module" src="file.js"></script>
+</body>
+</html>
