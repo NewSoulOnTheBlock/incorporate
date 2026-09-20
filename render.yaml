@@ -1,0 +1,65 @@
+# Render blueprint for the Registrar.
+#
+# One web service runs both halves: the read-only HTTP API the registry front
+# end reads, and the payroll loop that pays people once a minute.
+#
+# TWO SETTINGS HERE ARE LOAD-BEARING, NOT PREFERENCES:
+#
+#   1. plan: starter (not free). A free instance sleeps after inactivity, and a
+#      sleeping Registrar runs no payroll. The schedule would freeze and resume
+#      later — the design survives that, but nobody gets paid meanwhile.
+#
+#   2. disk. A company's age is its number of payroll runs, and that count lives
+#      in SQLite. Without a persistent disk, every deploy or restart wipes the
+#      database: every company snaps back to Q0 and its 8% opening rate, and
+#      every employee's seniority resets from 4x to 1x. That is not a cosmetic
+#      reset — it rewrites what people are owed.
+
+services:
+  - type: web
+    name: incorporate-registrar
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/registrar.js
+    healthCheckPath: /api/protocol
+
+    disk:
+      name: registry-books
+      mountPath: /var/data
+      sizeGB: 1
+
+    envVars:
+      # SQLite lives on the persistent disk, never in the ephemeral filesystem.
+      - key: DB_PATH
+        value: /var/data/incorporate.db
+
+      - key: NODE_VERSION
+        value: "24"
+
+      - key: RPC_URL
+        value: https://rpc.mainnet.chain.robinhood.com
+
+      # Which origins may read the API. Narrow this to the registry front end
+      # rather than leaving it open, now that you know the front end's URL.
+      - key: ALLOWED_ORIGINS
+        value: https://incorporate-gules.vercel.app
+
+      # Payroll is a DRY RUN until this is exactly "1". Leave it unset for the
+      # first deploy, watch a few runs in the logs, then switch it on.
+      - key: KEEPER_EXECUTE
+        value: "0"
+
+      # The mnemonic that derives EVERY company treasury. Set it in the Render
+      # dashboard only. sync:false keeps it out of this file and out of git.
+      - key: KEEPER_MNEMONIC
+        sync: false
+
+      # $INC is not issued yet. Leave both unset and the 1% simply accrues,
+      # fully accounted and excluded from payroll, buying nothing.
+      - key: PLATFORM_TOKEN
+        sync: false
+      - key: PLATFORM_CURVE
+        sync: false

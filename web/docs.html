@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation — Incorporate</title>
+<meta name="description" content="How Incorporate works: file a company, put every shareholder on payroll, and pay them out of the revenue the company actually earns.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
+    <nav class="nav">
+      <a href="./">Registry</a>
+      <a href="./#file" class="hide-sm">File</a>
+      <a href="docs.html" class="on">Docs</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="doc">
+
+  <aside class="toc">
+    <div class="grp">Overview</div>
+    <a href="#what">What this is</a>
+    <a href="#company">The company</a>
+    <a href="#revenue">Revenue</a>
+
+    <div class="grp">Employment</div>
+    <a href="#payroll">Who gets paid</a>
+    <a href="#weight">Payroll weight</a>
+    <a href="#seniority">Seniority</a>
+    <a href="#attendance">Attendance</a>
+
+    <div class="grp">The calendar</div>
+    <a href="#periods">Pay periods</a>
+    <a href="#schedule">The schedule</a>
+    <a href="#runway">Runway</a>
+
+    <div class="grp">Operations</div>
+    <a href="#run">The payroll run</a>
+    <a href="#treasury">The treasury</a>
+    <a href="#registrar">The Registrar</a>
+
+    <div class="grp">Filing</div>
+    <a href="#filing">Incorporating</a>
+    <a href="#currency">Share currency</a>
+    <a href="#listing">Listing an existing co.</a>
+
+    <div class="grp">Reference</div>
+    <a href="#constants">Constants</a>
+    <a href="#edges">Edge cases</a>
+  </aside>
+
+  <main class="prose">
+
+    <h1>Documentation</h1>
+    <p class="lede">Incorporate turns a token into a company. Every trade pays the
+    company revenue, every shareholder is on the payroll, and the payroll is paid
+    out of what the company actually earned — never out of anyone else's money.</p>
+
+    <h2 id="what">What this is</h2>
+    <p>Most tokens pay a trading tax to whoever created them. Incorporate takes the
+    same tax and pays it to <strong>the people holding the token</strong> instead,
+    on a fixed, decelerating schedule modelled on a corporate payroll.</p>
+    <p>There is no staking, no locking, no claiming and no deposit. Holding shares
+    <em>is</em> employment. If you hold, you are on the payroll, and you are paid
+    automatically every pay period until you sell.</p>
+    <div class="callout">
+      <p><strong>The one rule everything else follows from:</strong> a company can
+      only ever pay out what its own trading earned. There is no shared pool, no
+      subsidy from other companies, and no treasury that can be topped up from
+      outside. Payroll is funded by revenue or it is not funded at all.</p>
+    </div>
+
+    <h2 id="company">The company</h2>
+    <p>Filing a company issues a token. The token is that company's
+    <strong>shares</strong>. Holding shares makes you an employee; selling them
+    ends your employment.</p>
+    <p>Each company gets its own <a href="#treasury">treasury</a> — a real wallet,
+    holding only that company's money, spendable only on that company's payroll.</p>
+    <p>A newly filed company trades on a <strong>private round</strong> (a bonding
+    curve). Once it reaches its threshold it <strong>goes public</strong> and lists
+    on the open market. Going public changes where the shares trade; it does not
+    change the payroll.</p>
+
+    <h2 id="revenue">Revenue</h2>
+    <p>Every trade in a company's shares — buy or sell — pays
+    <strong>4% revenue</strong> to that company. The rate is fixed when the company
+    is filed and can never be changed afterwards, by anyone, including the founder.</p>
+    <p>That revenue is split the moment it lands:</p>
+    <ul>
+      <li><strong>3% — payroll.</strong> Paid to shareholders on the schedule below.</li>
+      <li><strong>1% — share buyback.</strong> Buys <code>$INC</code> on the open
+      market and retires it permanently.</li>
+    </ul>
+    <p>The split happens at the point revenue <em>arrives</em>, not at the point
+    payroll is paid. This matters: it means the payroll schedule only ever operates
+    on money that is already earmarked for employees. The buyback cannot reach into
+    wages that have already been earned.</p>
+    <div class="callout warn">
+      <p><strong>$INC is not issued yet.</strong> Until it is, the 1% accrues in each
+      company's treasury, fully accounted for and permanently excluded from payroll.
+      It is not spent, not borrowed against, and not quietly redirected. When
+      <code>$INC</code> is issued, the accrued balance begins buying and retiring it.</p>
+    </div>
+
+    <h2 id="payroll">Who gets paid</h2>
+    <p>Every holder of a company's shares is on its payroll, automatically, from the
+    moment the shares arrive in their wallet. There is nothing to sign up for and
+    nothing to claim.</p>
+    <p>Employment ends only when the shares leave. Selling is the sole way to resign.</p>
+
+    <h2 id="weight">Payroll weight</h2>
+    <p>Payroll is divided by <strong>weight</strong>, not headcount. Your weight is:</p>
+    <div class="formula">weight &nbsp;=&nbsp; shares &nbsp;&times;&nbsp; seniority &nbsp;&times;&nbsp; attendance</div>
+    <p>Your pay for a period is your share of the total weight on the books:</p>
+    <div class="formula">pay &nbsp;=&nbsp; ( your weight &divide; all weight ) &nbsp;&times;&nbsp; period payroll</div>
+    <p><strong>Shares</strong> scale linearly. That is deliberate: splitting a
+    position across several wallets produces exactly the same total weight as
+    holding it in one, so there is nothing to gain by fragmenting a position.</p>
+
+    <h2 id="seniority">Seniority</h2>
+    <p>Seniority is a multiplier from <strong>1&times; to 4&times;</strong>. It begins
+    accruing the moment you are hired and reaches its cap after
+    <strong>three fiscal quarters</strong> of continuous employment.</p>
+    <p>It accrues continuously rather than in steps, and it is measured against the
+    company's own payroll calendar — not wall-clock time and not chain time. A company
+    whose Registrar is paused does not accrue seniority for anyone while it is paused.</p>
+    <p>Seniority cannot be bought. Time served is the only input, which makes it the
+    one form of standing in the system that capital cannot shortcut.</p>
+
+    <h2 id="attendance">Attendance</h2>
+    <p>Attendance starts at <strong>1&times;</strong> and <strong>halves for each
+    consecutive pay period you are missed</strong>. After four consecutive misses it
+    reaches zero and you are <strong>off payroll</strong>.</p>
+    <ul>
+      <li>0 missed — 1.000&times;</li>
+      <li>1 missed — 0.500&times;</li>
+      <li>2 missed — 0.250&times;</li>
+      <li>3 missed — 0.125&times;</li>
+      <li>4 missed — <strong>0 — off payroll</strong></li>
+    </ul>
+    <p>Weight belonging to someone off payroll is not burned. It is simply not
+    counted, so the remaining employees divide the same payroll among fewer shares.</p>
+    <div class="callout warn">
+      <p><strong>Be clear about what "missed" means.</strong> You cannot miss a period
+      by being offline — there is nothing to attend. A period is missed when the
+      company could not pay you: your share fell below the
+      <a href="#constants">minimum cheque</a>, or you fell outside the
+      <strong>25 cheques</strong> a company can issue per period. Attendance decay
+      therefore falls hardest on the smallest holders, and their forfeited weight is
+      redistributed to the largest. This is a real and deliberate property of the
+      design, not an accident — read it before you file.</p>
+    </div>
+
+    <h2 id="periods">Pay periods and fiscal quarters</h2>
+    <ul>
+      <li>A <strong>pay period</strong> is 60 seconds. One payroll run.</li>
+      <li>A <strong>fiscal quarter</strong> is 5 pay periods — 5 minutes.</li>
+    </ul>
+    <p>A company's calendar is driven by how many payroll runs it has actually had,
+    not by how long ago it was filed. A company only ages when it is paid. If the
+    Registrar stops, the calendar stops with it, and the schedule resumes exactly
+    where it left off rather than fast-forwarding.</p>
+
+    <h2 id="schedule">The payout schedule</h2>
+    <p>Each pay period distributes a percentage of the treasury's payroll balance.
+    That percentage halves every fiscal quarter until it reaches a permanent floor.</p>
+
+    <div class="tablewrap" style="margin-bottom:18px">
+    <table>
+      <thead><tr>
+        <th>Quarter</th><th>From</th><th class="num">Per period</th><th class="num">Runway</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Q0</td><td>filing</td><td class="num">8.00%</td><td class="num">13&times;</td></tr>
+        <tr><td>Q1</td><td>5 min</td><td class="num">4.00%</td><td class="num">25&times;</td></tr>
+        <tr><td>Q2</td><td>10 min</td><td class="num">2.00%</td><td class="num">50&times;</td></tr>
+        <tr><td>Q3</td><td>15 min</td><td class="num">1.00%</td><td class="num">100&times;</td></tr>
+        <tr><td>Q4+</td><td>20 min</td><td class="num">0.50%</td><td class="num">200&times;</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Because the rate applies to <em>what remains</em> rather than to a fixed
+    figure, the treasury is mathematically undrainable. It converges; it never
+    empties. A company with no trading still pays, just progressively less.</p>
+    <div class="callout">
+      <p><strong>A cut in rate is not a cut in pay.</strong> If revenue is steady, the
+      treasury grows until the smaller percentage pays the same amount. What each
+      halving actually does is double the reserve standing behind every cheque.</p>
+    </div>
+
+    <h2 id="runway">Runway</h2>
+    <p>Runway is how many periods of revenue must be sitting in the treasury for
+    payroll to hold steady at the current rate. It is simply the inverse of the
+    payout rate, which is why it doubles exactly as the rate halves — 13&times; at
+    filing, 200&times; from Q4 onward.</p>
+
+    <h2 id="run">The payroll run</h2>
+    <p>Once per pay period, for each company, the Registrar performs four steps:</p>
+    <ol>
+      <li><strong>Collect.</strong> Move accrued revenue out of the market toward the
+      clearing account. Stops once a company goes public, after which revenue is
+      routed directly.</li>
+      <li><strong>Deposit.</strong> The treasury withdraws what it has accrued. This
+      is the only step that moves money <em>into</em> a treasury, and it is where the
+      3%/1% split is applied.</li>
+      <li><strong>Assess.</strong> Read the share register, compute every employee's
+      weight, and take the quarter's percentage of the payroll balance.</li>
+      <li><strong>Pay.</strong> Issue cheques largest first, to a maximum of
+      <strong>25 per period</strong>.</li>
+    </ol>
+    <p>Every cheque is recorded against <code>(company, period, employee)</code>. That
+    record is what makes paying the same period twice structurally impossible: a
+    Registrar that crashes and restarts mid-run collides with its own records rather
+    than paying anyone a second time.</p>
+
+    <h2 id="treasury">The treasury</h2>
+    <p>Each company's treasury is a real wallet, derived deterministically from the
+    Registrar's key and a public per-company salt. It exists as an address before the
+    company is filed, which matters enormously: the revenue recipient is fixed
+    permanently at filing, so the treasury must already exist to be named.</p>
+    <p>No treasury key is ever stored. Signing authority is re-derived on demand and
+    discarded.</p>
+    <p>The spendable payroll balance is the treasury balance minus the accrued
+    buyback, minus a small reserve kept back so the company can always afford to send
+    the next cheque.</p>
+
+    <h2 id="registrar">The Registrar</h2>
+    <p>One service runs payroll for every company, once per pay period. Its status is
+    derived from its own activity rather than self-reported, so a Registrar that has
+    crashed cannot claim to be running:</p>
+    <ul>
+      <li><strong>Running</strong> — completed a run recently.</li>
+      <li><strong>Paused</strong> — ran before, but not lately. Calendars are frozen.</li>
+      <li><strong>Not started</strong> — has never run for this company.</li>
+    </ul>
+
+    <h2 id="filing">Incorporating</h2>
+    <p>Fixed by the registry and not negotiable: the 4% revenue rate, the share
+    supply, and the market structure. Chosen by the founder: name, ticker,
+    description, logo, and <a href="#currency">share currency</a>.</p>
+    <p>A founder may optionally take an opening position at filing. Logos are pinned
+    to IPFS before signing so the recorded address is immutable.</p>
+    <div class="callout warn">
+      <p>Two things that are unforgiving. First, the treasury address is written into
+      the company at filing and can never be changed — point it anywhere else and the
+      company is permanently severed from its payroll. Second, an anti-sniping rate
+      applies for the first few seconds after filing; do not buy your own company
+      immediately.</p>
+    </div>
+
+    <h2 id="currency">Share currency</h2>
+    <p>A company can be denominated in any currency the registry approves — the native
+    coin, a stablecoin, or a tokenised equity such as an index or a single stock.</p>
+    <div class="callout">
+      <p><strong>The currency a company trades in is the currency it pays in.</strong>
+      A company denominated in a stablecoin earns its revenue in that stablecoin, so
+      its employees are paid in it too. Transaction costs are always settled in the
+      native coin regardless, which is why every treasury keeps a small native balance
+      separate from its payroll balance.</p>
+    </div>
+    <p>Currencies differ in precision, and the minimum cheque is set per currency
+    accordingly — a fixed figure that is sensible for one currency can be meaningless
+    or punitive in another.</p>
+
+    <h2 id="listing">Listing an existing company</h2>
+    <p>A token that already exists can be listed. Its name, ticker, market and status
+    are read from the chain.</p>
+    <p>A listed company keeps its original revenue recipient — a treasury cannot be
+    derived for a wallet the Registrar does not control. Payroll therefore only runs
+    if that recipient is an address the Registrar can actually pay from. A company
+    with a 0% revenue rate has no payroll and cannot employ anyone.</p>
+
+    <h2 id="constants">Constants</h2>
+    <div class="tablewrap" style="margin-bottom:18px">
+    <table>
+      <thead><tr><th>Constant</th><th class="num">Value</th></tr></thead>
+      <tbody>
+        <tr><td>Revenue rate (immutable)</td><td class="num">4%</td></tr>
+        <tr><td>&nbsp;&nbsp;— to payroll</td><td class="num">3%</td></tr>
+        <tr><td>&nbsp;&nbsp;— to share buyback</td><td class="num">1%</td></tr>
+        <tr><td>Pay period</td><td class="num">60 s</td></tr>
+        <tr><td>Fiscal quarter</td><td class="num">5 periods</td></tr>
+        <tr><td>Opening payout rate</td><td class="num">8.00%</td></tr>
+        <tr><td>Floor payout rate</td><td class="num">0.50%</td></tr>
+        <tr><td>Seniority cap</td><td class="num">4&times;</td></tr>
+        <tr><td>Time to seniority cap</td><td class="num">3 quarters</td></tr>
+        <tr><td>Off payroll after</td><td class="num">4 missed periods</td></tr>
+        <tr><td>Cheques per period</td><td class="num">25</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="edges">Edge cases</h2>
+    <ul>
+      <li><strong>Cheque too small to be worth sending</strong> — skipped, and the
+      money stays in the treasury for the next period rather than being spent on
+      transaction costs.</li>
+      <li><strong>More than 25 employees owed</strong> — the largest 25 are paid.
+      Every share is still calculated against the <em>full</em> payroll weight, so
+      being outside the window never inflates anyone else's cheque.</li>
+      <li><strong>Splitting a position</strong> — no advantage. Weight is linear in
+      shares.</li>
+      <li><strong>Treasury out of native coin</strong> — the run is skipped and
+      reported, rather than half-paying a period.</li>
+      <li><strong>Company age</strong> — counted in payroll runs, never in calendar
+      time.</li>
+    </ul>
+
+    <div class="callout" style="margin-top:36px">
+      <p><strong>Nothing here is investment advice, and none of it is a promise of
+      income.</strong> A company pays what its own trading earns. If it is not traded,
+      it earns nothing, and a payroll of nothing is still a payroll.</p>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap fin">
+    <span>Incorporate</span>
+    <a href="./">Registry</a>
+    <a href="docs.html">Documentation</a>
+    <span class="muted" style="margin-left:auto">A company pays what it earns.</span>
+  </div>
+</footer>
+
+</body>
+</html>

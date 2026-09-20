@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incorporate — the company registry</title>
+<meta name="description" content="File a company, put every shareholder on payroll, and pay them out of the revenue the company actually earns.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="banner" id="banner" hidden></div>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="./">Incorporate<span class="reg">.</span></a>
+    <nav class="nav">
+      <a href="./" class="on">Registry</a>
+      <a href="#file" class="hide-sm">File</a>
+      <a href="docs.html">Docs</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Companies, not coins</div>
+    <h1>Every shareholder is on the payroll.</h1>
+    <p>File a company and it charges 4% revenue on every trade of its shares.
+    Three of those four points are wages, paid automatically to everyone holding,
+    every sixty seconds. No staking. No claiming. A company pays what it earns.</p>
+    <div class="cta">
+      <a class="btn" href="#file">File a company</a>
+      <a class="btn ghost" href="docs.html">Read the documentation</a>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="stat-row" id="stats">
+    <div class="stat"><div class="k">Companies</div><div class="v" id="s-co">—</div></div>
+    <div class="stat"><div class="k">On payroll</div><div class="v" id="s-emp">—</div></div>
+    <div class="stat"><div class="k">Wages paid</div><div class="v" id="s-paid">—</div></div>
+    <div class="stat"><div class="k">Pay period</div><div class="v" id="s-period">60s</div></div>
+    <div class="stat"><div class="k">Registrar</div><div class="v" id="s-reg">—</div></div>
+  </div>
+
+  <div class="section-head">
+    <h2>The registry</h2>
+    <span class="note" id="reg-note">Every filed company, its treasury, and where it sits on the payout schedule.</span>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th class="num">Treasury</th>
+          <th class="num">Quarter</th>
+          <th class="num">Per period</th>
+          <th class="num">Runway</th>
+          <th class="num">Paid to date</th>
+        </tr>
+      </thead>
+      <tbody id="registry">
+        <tr><td colspan="8" class="empty">Loading the register…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-head">
+    <h2>How it works</h2>
+  </div>
+  <div class="grid3">
+    <div class="card">
+      <h3>Hold, and you are hired</h3>
+      <p>Holding shares is employment. Nothing to stake, nothing to lock, nothing to
+      claim. Selling is the only way to resign.</p>
+    </div>
+    <div class="card">
+      <h3>Weight, not headcount</h3>
+      <p>Wages divide by <code>shares × seniority × attendance</code>. Seniority runs
+      1× to 4× over three quarters and cannot be bought — only served.</p>
+    </div>
+    <div class="card">
+      <h3>The treasury cannot be drained</h3>
+      <p>Each period pays a percentage of what remains, halving quarterly to a 0.50%
+      floor. It converges; it never empties.</p>
+    </div>
+    <div class="card">
+      <h3>3% wages, 1% buyback</h3>
+      <p>Revenue splits the moment it lands. The buyback buys <code>$INC</code> and
+      retires it, and can never reach into wages already earned.</p>
+    </div>
+    <div class="card">
+      <h3>Paid in what it trades in</h3>
+      <p>A company denominated in a stablecoin earns and pays in that stablecoin.
+      Any currency the registry approves works.</p>
+    </div>
+    <div class="card">
+      <h3>Books you can audit</h3>
+      <p>Every cheque is recorded against company, period and employee — which is what
+      makes paying a period twice impossible rather than merely unlikely.</p>
+    </div>
+  </div>
+
+  <div class="section-head" id="file">
+    <h2>File a company</h2>
+    <span class="note">Filing is done from the command line against the registry contract.</span>
+  </div>
+  <div class="card">
+    <p style="margin:0 0 14px;color:var(--ink-soft)">The treasury address is written
+    into the company at filing and can never be changed afterwards, so filing runs
+    locally where you control the founder key — never in a web page.</p>
+<pre><code>git clone &lt;this repo&gt; &amp;&amp; cd incorporate
+npm install
+cp .env.example .env          # set FOUNDER key + REGISTRAR mnemonic
+
+node src/cli.js doctor        # read live registry state
+node src/cli.js pairs         # list approved share currencies
+NAME="Acme Holdings" SYMBOL=ACME node src/cli.js launch
+PAIR=USDG node src/cli.js launch          # denominate in a stablecoin</code></pre>
+    <p style="margin:14px 0 0;color:var(--ink-faint);font-size:13.5px">
+    Filing is a dry run unless you set the execute flag. Fund the treasury with a
+    little native coin for transaction costs before the first payroll run, and do not
+    buy your own company in the first few seconds — an anti-sniping rate applies.</p>
+  </div>
+
+  <div class="section-head">
+    <h2>Recent cheques</h2>
+    <span class="note">The latest wages issued across every company.</span>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th><th>Employee</th>
+          <th class="num">Period</th><th class="num">Amount</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="feed">
+        <tr><td colspan="5" class="empty">No cheques issued yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap fin">
+    <span>Incorporate</span>
+    <a href="./">Registry</a>
+    <a href="docs.html">Documentation</a>
+    <span class="muted" style="margin-left:auto">A company pays what it earns.</span>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "deepshaft",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fee-mining protocol on Robinhood Chain: every holder of a launch mines its 4% trading tax on a Bitcoin-style halving schedule.",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "doctor": "node src/cli.js doctor",
+    "launch": "node src/cli.js launch",
+    "import": "node src/cli.js import",
+    "keeper": "node src/keeper.js",
+    "serve": "node src/server.js"
+  },
+  "dependencies": {
+    "ethers": "^6.17.0"
+  }
+}
