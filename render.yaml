@@ -46,13 +46,17 @@ services:
       - key: ALLOWED_ORIGINS
         value: https://incorporate-gules.vercel.app
 
-      # Payroll mode. "1" sends real transfers; anything else computes the
-      # full run and logs what it would pay without moving anything.
+      # LIVE. Payroll sends real transfers.
       #
-      # Now that the books are durable this is safe to turn on: a restart no
-      # longer rewrites the figures a payment would be computed from.
+      # Safe to run live only because the books are durable: a restart no
+      # longer rewrites the figures a payment is computed from, and no longer
+      # loses the salt that derives a treasury's key.
+      #
+      # Two things still bound the blast radius. A run with no companies pays
+      # nobody, and the Registrar can only spend from treasuries it derives
+      # from KEEPER_MNEMONIC -- it cannot touch any other wallet.
       - key: KEEPER_EXECUTE
-        value: "0"
+        value: "1"
 
       # The mnemonic that derives EVERY company treasury. Dashboard only.
       # Without it the Registrar still serves the API and still runs the loop,
