@@ -41,7 +41,7 @@ export async function syncHolders(launch) {
   const skip = excluded(launch);
   // Seed from what we already know so partial scans compose correctly.
   const balances = new Map();
-  for (const m of allMinersFor.all(launch.token)) {
+  for (const m of await allMinersFor.all(launch.token)) {
     balances.set(m.address, BigInt(m.holdings));
   }
 
@@ -79,19 +79,19 @@ export async function syncHolders(launch) {
     const prev = before.get(addr) ?? 0n;
     if (bal === prev) continue;
     const clamped = bal > 0n ? bal : 0n;
-    upsertMiner.run(launch.token, addr, clamped.toString(), epoch);
+    await upsertMiner.run(launch.token, addr, clamped.toString(), epoch);
     // A position closed to zero forfeits its tenure. Re-entering starts the
     // 1x -> 4x climb over again: tenure cannot be sold and rebought.
-    if (clamped === 0n && prev > 0n) resetMinerTenure.run(epoch, launch.token, addr);
+    if (clamped === 0n && prev > 0n) await resetMinerTenure.run(epoch, launch.token, addr);
   }
 
-  setScanned.run(head, launch.token);
+  await setScanned.run(head, launch.token);
   return applied;
 }
 
 /** Read a launch's holder set as allocator input. */
-export function minerSet(token) {
-  return allMinersFor.all(token)
+export async function minerSet(token) {
+  return (await allMinersFor.all(token))
     .filter((m) => BigInt(m.holdings) > 0n)
     .map((m) => ({
       address: m.address,

@@ -81,7 +81,7 @@ async function settle(launch) {
   const era = eraOf(epoch);
   const bps = emissionBps(era);
 
-  await syncHolders(getLaunch.get(launch.token));
+  await syncHolders(await getLaunch.get(launch.token));
 
   // The quote asset IS the payout asset: a USDG-quoted launch earns its tax
   // in USDG and therefore pays its miners USDG.
@@ -103,19 +103,19 @@ async function settle(launch) {
     // 3% stays minable, 1% is set aside for the burn and is invisible to the
     // emission schedule from here on.
     const accrued = await claim(launch, signer, pair);
-    if (accrued > 0n && !DRY) accrueInflow(getLaunch.get(launch.token), accrued);
+    if (accrued > 0n && !DRY) await accrueInflow(await getLaunch.get(launch.token), accrued);
   }
 
   const vaultBal = pair.native
     ? await provider.getBalance(launch.vault)
     : await erc20(pair.address).balanceOf(launch.vault);
 
-  const owed = BigInt((getLaunch.get(launch.token) || {}).buyback_owed || "0");
+  const owed = BigInt((await getLaunch.get(launch.token) || {}).buyback_owed || "0");
   const emission = epochEmission(vaultBal, epoch, {
     gasFloat: gasFloatFor(pair),
     buybackOwed: owed,
   });
-  const miners = minerSet(launch.token);
+  const miners = await minerSet(launch.token);
 
   const { paid, skipped, totalPaid, totalHashrate } =
     allocate(miners, emission, { dustFloor: pair.dustFloor, maxPayouts: MAX_PAYOUTS_PER_EPOCH });
@@ -132,7 +132,7 @@ async function settle(launch) {
   // primary key means a crashed-and-restarted pass collides on insert rather
   // than paying the same epoch twice.
   for (const p of paid) {
-    insertReceipt.run(launch.token, epoch, p.address, p.amount.toString(),
+    await insertReceipt.run(launch.token, epoch, p.address, p.amount.toString(),
                       p.hashrate.toString(), DRY ? "dry" : "pending", ts);
   }
 
@@ -146,10 +146,10 @@ async function settle(launch) {
           ? await payToken.transfer(p.address, p.amount, fees)
           : await signer.sendTransaction({ to: p.address, value: p.amount, ...fees });
         await tx.wait();
-        markReceipt.run("sent", tx.hash, launch.token, epoch, p.address);
+        await markReceipt.run("sent", tx.hash, launch.token, epoch, p.address);
         sent += p.amount;
       } catch (err) {
-        markReceipt.run("failed", null, launch.token, epoch, p.address);
+        await markReceipt.run("failed", null, launch.token, epoch, p.address);
         log(`  ! payout to ${p.address} failed: ${err.shortMessage || err.message}`);
       }
     }
@@ -161,20 +161,20 @@ async function settle(launch) {
     const hit = paidSet.has(m.address);
     const missed = hit ? 0 : m.consecutiveMissed + 1;
     const share = amountByAddr.get(m.address) ?? 0n;
-    updateMinerEpoch.run(m.epochsHeld + 1, missed, share.toString(), launch.token, m.address);
+    await updateMinerEpoch.run(m.epochsHeld + 1, missed, share.toString(), launch.token, m.address);
   }
 
-  insertEpoch.run(launch.token, epoch, era, bps, vaultBal.toString(), emission.toString(),
+  await insertEpoch.run(launch.token, epoch, era, bps, vaultBal.toString(), emission.toString(),
                   totalPaid.toString(), totalHashrate.toString(), miners.length, paid.length, ts);
 
   const mined = BigInt(launch.total_mined_wei) + (DRY ? 0n : sent);
-  bumpEpoch.run(ts, mined.toString(), launch.token);
+  await bumpEpoch.run(ts, mined.toString(), launch.token);
 
   // Graduation is terminal for the sweep step, so keep the flag current.
   if (launch.curve && !launch.graduated) {
     try {
       if (await curve(launch.curve).graduated()) {
-        setGraduated.run(1, launch.token);
+        await setGraduated.run(1, launch.token);
         log("  graduated -- sweeps now blocked, vault keeps paying");
       }
     } catch { /* curve may not expose it */ }
@@ -183,14 +183,14 @@ async function settle(launch) {
 
 // --------------------------------------------------------------------- driver
 export async function pass() {
-  const launches = activeLaunches.all();
+  const launches = await activeLaunches.all();
   log(`keeper pass: ${launches.length} pool(s)${DRY ? "  [DRY RUN]" : ""}`);
   for (const l of launches) {
     log(` ${l.symbol} ${l.token}`);
     try { await settle(l); }
     catch (err) { log(`  ! ${l.symbol} failed: ${err.shortMessage || err.message}`); }
   }
-  beat.run(now());
+  await beat.run(now());
 }
 
 async function main() {

@@ -73,8 +73,8 @@ const MIME = {
  * Keeper liveness, derived rather than self-reported. A keeper that crashed
  * cannot lie about being up, because the heartbeat simply stops advancing.
  */
-function keeperState() {
-  const b = readBeat.get();
+async function keeperState() {
+  const b = await readBeat.get();
   if (!b) return { state: "not-started", lastPass: null, passes: 0 };
   const age = now() - b.last_pass;
   return {
@@ -86,7 +86,7 @@ function keeperState() {
 }
 
 /** Project a launch row into the shape the UI wants. */
-function launchView(r) {
+async function launchView(r) {
   const era = eraOf(r.epoch_index);
   const bps = emissionBps(era);
   const pair = resolvePair(r.pair_token);
@@ -115,15 +115,15 @@ function launchView(r) {
     // needs both the ticker and the precision to render any figure correctly.
     payoutAsset: pair.symbol,
     payoutDecimals: pair.decimals,
-    treasuryRaw: (lastVaultFor.get(r.token) || {}).vault_wei || "0",
+    treasuryRaw: (await lastVaultFor.get(r.token) || {}).vault_wei || "0",
     buybackOwed: r.buyback_owed || "0",
-    employeeCount: (minerCountFor.get(r.token) || { n: 0 }).n,
+    employeeCount: (await minerCountFor.get(r.token) || { n: 0 }).n,
   };
 }
 
 /** Live hashrate table for one launch, exactly as the keeper would compute it. */
-function minerView(token) {
-  const rows = allMinersFor.all(token).filter((m) => BigInt(m.holdings) > 0n);
+async function minerView(token) {
+  const rows = (await allMinersFor.all(token)).filter((m) => BigInt(m.holdings) > 0n);
   const scored = rows.map((m) => {
     const hr = hashrateOf({
       holdings: BigInt(m.holdings),
@@ -153,7 +153,7 @@ function minerView(token) {
 }
 
 const routes = {
-  "/api/protocol": () => ({
+  "/api/protocol": async () => ({
     epochSeconds: EPOCH_SECONDS,
     epochsPerEra: EPOCHS_PER_ERA,
     creatorTaxBps: CREATOR_TAX_BPS,
@@ -166,10 +166,10 @@ const routes = {
       emissionBps: emissionBps(era),
       reserveMultiple: reserveMultiple(era),
     })),
-    keeper: keeperState(),
+    keeper: await keeperState(),
   }),
 
-  "/api/launches": () => allLaunches.all().map(launchView),
+  "/api/launches": async () => Promise.all((await allLaunches.all()).map(launchView)),
 
   // Everything the filing form needs to build a transaction. Served from the
   // Registrar rather than hardcoded in the page so the address book has one
@@ -195,7 +195,7 @@ const routes = {
   // known before signing because creatorFeeRecipient is immutable once the
   // company is filed, so this has to happen before the wallet is asked to
   // sign anything.
-  "/api/reserve-treasury": () => {
+  "/api/reserve-treasury": async () => {
     let salt, vault;
     try {
       salt = newSalt();
@@ -205,46 +205,46 @@ const routes = {
       // treasury nobody can ever spend from.
       return { error: "registrar-not-configured", detail: err.message };
     }
-    reserveSalt.run(salt, vault.toLowerCase(), now());
+    await reserveSalt.run(salt, vault.toLowerCase(), now());
     return { salt, vault };
   },
 
-  "/api/feed": (u) =>
-    feedReceipts.all(Number(u.searchParams.get("limit") || 40)).map((r) => ({
+  "/api/feed": async (u) =>
+    (await feedReceipts.all(Number(u.searchParams.get("limit") || 40))).map((r) => ({
       ...r,
       payoutAsset: r.pair_symbol || "ETH",
       payoutDecimals: r.pair_decimals ?? 18,
     })),
 
-  "/api/launch": (u) => {
+  "/api/launch": async (u) => {
     const t = (u.searchParams.get("token") || "").toLowerCase();
-    const r = getLaunch.get(t);
+    const r = await getLaunch.get(t);
     if (!r) return null;
-    const miners = minerView(t);
+    const miners = await minerView(t);
     return {
-      ...launchView(r),
+      ...(await launchView(r)),
       miners,
       minerCount: miners.length,
-      epochs: epochsFor.all(t, 60),
-      receipts: recentReceipts.all(t, 50),
+      epochs: await epochsFor.all(t, 60),
+      receipts: await recentReceipts.all(t, 50),
     };
   },
 
-  "/api/miner": (u) => {
+  "/api/miner": async (u) => {
     const a = (u.searchParams.get("address") || "").toLowerCase();
     if (!ethers.isAddress(a)) return null;
-    return minerPositions.all(a);
+    return await minerPositions.all(a);
   },
 
   // What a given position would earn next epoch, at the current vault size.
   // Purely informational -- the keeper recomputes from scratch at settlement.
-  "/api/estimate": (u) => {
+  "/api/estimate": async (u) => {
     const t = (u.searchParams.get("token") || "").toLowerCase();
-    const r = getLaunch.get(t);
+    const r = await getLaunch.get(t);
     if (!r) return null;
     const holdings = BigInt(u.searchParams.get("holdings") || "0");
     const epochsHeld = Number(u.searchParams.get("epochsHeld") || 0);
-    const miners = minerView(t);
+    const miners = await minerView(t);
     const total = miners.reduce((a, m) => a + BigInt(m.hashrate), 0n);
     const mine = hashrateOf({ holdings, epochsHeld, consecutiveMissed: 0 });
     const vaultWei = BigInt(u.searchParams.get("vaultWei") || "0");
@@ -322,7 +322,7 @@ const writeRoutes = {
     const salt = String(body.salt || "");
     if (!ethers.isAddress(token)) return { error: "bad-token" };
 
-    const reserved = getReserved.get(salt);
+    const reserved = await getReserved.get(salt);
     if (!reserved) return { error: "unknown-salt" };
     if (reserved.used_by) return { error: "salt-already-used", token: reserved.used_by };
 
@@ -348,23 +348,23 @@ const writeRoutes = {
     const pair = resolvePair(body.pairToken || NATIVE_ADDR);
     const block = await provider.getBlockNumber().catch(() => 0);
 
-    insertLaunch.run(
+    await insertLaunch.run(
       token, name, symbol, body.description || "", body.image || "",
       curveAddr ? curveAddr.toLowerCase() : null,
       pair.address.toLowerCase(), pair.symbol, pair.decimals,
       String(body.creator || "").toLowerCase(), CREATOR_TAX_BPS,
       expected.toLowerCase(), salt, 0, now(), block, block);
 
-    useReserved.run(token, salt);
-    setGraduatedIfKnown(token, graduated);
+    await useReserved.run(token, salt);
+    await setGraduatedIfKnown(token, graduated);
     return { ok: true, token, vault: expected, curve: curveAddr };
   },
 };
 
 // setGraduated is optional depending on build; guard it so indexing never
 // fails on a cosmetic field.
-function setGraduatedIfKnown(token, graduated) {
-  try { setGraduated.run(graduated, token); } catch {}
+async function setGraduatedIfKnown(token, graduated) {
+  try { await setGraduated.run(graduated, token); } catch {}
 }
 
 async function serveStatic(pathname, res) {

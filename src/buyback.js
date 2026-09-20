@@ -34,13 +34,13 @@ export const buybackLive = () => Boolean(feeEnabled() && PLATFORM_TOKEN && PLATF
  * Carve the platform slice off an inflow and park it. Returns the miner share,
  * which is the only part the emission schedule may ever touch.
  */
-export function accrueInflow(launch, inflowRaw) {
+export async function accrueInflow(launch, inflowRaw) {
   if (!feeEnabled()) return BigInt(inflowRaw);
 
   const { miner, buyback } = splitInflow(inflowRaw);
   if (buyback > 0n) {
     const owed = BigInt(launch.buyback_owed || "0") + buyback;
-    addBuybackOwed.run(owed.toString(), launch.token);
+    await addBuybackOwed.run(owed.toString(), launch.token);
   }
   return miner;
 }
@@ -56,7 +56,7 @@ export async function runBuybacks({ dry = true } = {}) {
   const out = { enabled: feeEnabled(), live: buybackLive(), accrued: [], burned: [], skipped: [] };
   if (!feeEnabled()) return out;
 
-  for (const row of activeLaunches.all()) {
+  for (const row of await activeLaunches.all()) {
     const owed = BigInt(row.buyback_owed || "0");
     if (owed === 0n) continue;
 
@@ -89,8 +89,8 @@ export async function runBuybacks({ dry = true } = {}) {
       const rc = await tx.wait();
 
       const sent = BigInt(row.buyback_sent || "0") + owed;
-      settleBuyback.run(sent.toString(), row.token);
-      insertBuyback.run(row.token, owed.toString(), pair.symbol, "0", "sent", now());
+      await settleBuyback.run(sent.toString(), row.token);
+      await insertBuyback.run(row.token, owed.toString(), pair.symbol, "0", "sent", now());
       out.burned.push({ token: row.token, spent: owed.toString(), tx: rc.hash });
     } catch (err) {
       out.skipped.push({ token: row.token, owed: owed.toString(), reason: err.shortMessage || err.message });
@@ -100,8 +100,8 @@ export async function runBuybacks({ dry = true } = {}) {
 }
 
 /** Reportable state, so the buffer is visible whether or not it can be spent. */
-export function buybackStatus() {
-  const rows = activeLaunches.all();
+export async function buybackStatus() {
+  const rows = await activeLaunches.all();
   const total = rows.reduce((a, r) => a + BigInt(r.buyback_owed || "0"), 0n);
   const sent = rows.reduce((a, r) => a + BigInt(r.buyback_sent || "0"), 0n);
   return {

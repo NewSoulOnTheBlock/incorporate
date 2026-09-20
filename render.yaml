@@ -3,40 +3,19 @@
 # One web service runs both halves: the read-only HTTP API that the registry
 # front end reads, and the payroll loop that pays people once a minute.
 #
-# ---------------------------------------------------------------------------
-# THIS IS THE FREE-TIER CONFIGURATION. READ BEFORE GOING LIVE.
-# ---------------------------------------------------------------------------
+# The books live in Neon Postgres, not on this instance. That change removed
+# the failure that previously made a free instance unusable: the database no
+# longer dies with the container, so a deploy, a restart, or a sleep/wake no
+# longer resets every company to Q0 and every employee's seniority to 1x, and
+# no longer strands a treasury by losing the salt that derives its key.
 #
-# A free instance has no persistent disk and sleeps after a spell with no
-# inbound traffic. Both facts change what this service can honestly be used
-# for:
+# What the free plan still costs you: the instance sleeps when idle, so payroll
+# pauses. The schedule is driven by completed runs, so it freezes and resumes
+# rather than fast-forwarding -- nobody is paid while it sleeps, but nothing is
+# miscounted. The first request after a sleep also waits on a cold start.
 #
-#   1. The books do not survive. SQLite lives on ephemeral storage, so every
-#      deploy — and every wake from sleep — can start from an empty database.
-#      A company's age is its number of payroll runs, and that count lives in
-#      exactly that database. When it is lost, every company snaps back to Q0
-#      and its 8% opening rate, and every employee's seniority resets from 4x
-#      to 1x.
-#
-#   2. Payroll pauses while asleep. The schedule is driven by completed runs,
-#      so it freezes and resumes rather than fast-forwarding. The design
-#      survives this; it just means nobody is paid meanwhile.
-#
-# Consequently KEEPER_EXECUTE is 0 here. Running LIVE on ephemeral storage
-# would send real transfers computed from figures that can silently reset —
-# paying an 8% opening rate to a company that should be at 0.50%, and erasing
-# the seniority multiplier of everyone who earned it — with the books that
-# would prove it gone. Do not set this to 1 until the service has a disk.
-#
-# To make it safe to run live, add a card and switch to:
-#
-#   plan: starter
-#   disk:
-#     name: registry-books
-#     mountPath: /var/data
-#     sizeGB: 1
-#
-# and set DB_PATH to /var/data/incorporate.db so the books land on the disk.
+# Move to `plan: starter` when you want payroll to actually run every minute.
+# No disk is needed at any plan: the data is in Neon.
 
 services:
   - type: web
@@ -50,10 +29,11 @@ services:
     healthCheckPath: /api/protocol
 
     envVars:
-      # Ephemeral on the free plan. Move this onto a mounted disk before
-      # trusting it with anything that must survive a restart.
-      - key: DB_PATH
-        value: ./data/incorporate.db
+      # Neon Postgres. Pooled connection string, set in the dashboard.
+      # sync:false keeps the credentials out of this file and out of git --
+      # this repository is public.
+      - key: DATABASE_URL
+        sync: false
 
       - key: NODE_VERSION
         value: "24"
@@ -66,16 +46,24 @@ services:
       - key: ALLOWED_ORIGINS
         value: https://incorporate-gules.vercel.app
 
-      # DRY RUN. Computes real payroll against real chain state and logs what
-      # it would pay, but moves nothing. See the warning above before changing.
+      # Payroll mode. "1" sends real transfers; anything else computes the
+      # full run and logs what it would pay without moving anything.
+      #
+      # Now that the books are durable this is safe to turn on: a restart no
+      # longer rewrites the figures a payment would be computed from.
       - key: KEEPER_EXECUTE
         value: "0"
 
-      # The mnemonic that derives EVERY company treasury. Set it in the Render
-      # dashboard only. sync:false keeps it out of this file and out of git.
-      # Without it the Registrar still serves the API and still runs the loop —
-      # it simply cannot derive a treasury, so nothing can move.
+      # The mnemonic that derives EVERY company treasury. Dashboard only.
+      # Without it the Registrar still serves the API and still runs the loop,
+      # but cannot derive a treasury, so nothing can move and no company can
+      # be filed.
       - key: KEEPER_MNEMONIC
+        sync: false
+
+      # Pins company logos to IPFS. Without it the filing form asks for a URL
+      # instead of accepting a file.
+      - key: PINATA_JWT
         sync: false
 
       # $INC is not issued yet. Leave both unset and the 1% simply accrues,

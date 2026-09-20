@@ -16,6 +16,9 @@
     "serve": "node src/server.js"
   },
   "dependencies": {
+    "@neon/config": "^1.7.2",
+    "@neon/env": "^1.4.3",
+    "@neondatabase/serverless": "^1.1.0",
     "ethers": "^6.17.0"
   }
 }

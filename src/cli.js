@@ -186,7 +186,7 @@ async function launch() {
     curveAddr = g[1];
   } catch { /* curve lookup is a convenience, not a requirement */ }
 
-  insertLaunch.run(token.toLowerCase(), name, symbol, params.description, params.logo,
+  await insertLaunch.run(token.toLowerCase(), name, symbol, params.description, params.logo,
                    curveAddr ? curveAddr.toLowerCase() : null, pairToken.toLowerCase(),
                    pair.symbol, pair.decimals,
                    w.address.toLowerCase(), CREATOR_TAX_BPS, vault.toLowerCase(), salt,
@@ -255,7 +255,7 @@ async function importToken() {
   console.log("recipient ", recipient || "unknown");
   console.log("graduated ", Boolean(graduated));
 
-  insertLaunch.run(token.toLowerCase(), name, symbol, "", "",
+  await insertLaunch.run(token.toLowerCase(), name, symbol, "", "",
                    curveAddr ? curveAddr.toLowerCase() : null, pair.address.toLowerCase(),
                    pair.symbol, pair.decimals,
                    (recipient || NATIVE).toLowerCase(), 0,
@@ -304,7 +304,7 @@ async function vault() {
 }
 
 async function list() {
-  const rows = allLaunches.all();
+  const rows = await allLaunches.all();
   if (!rows.length) {
     console.log("no launches indexed yet");
     return;

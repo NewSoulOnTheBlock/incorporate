@@ -10,3 +10,4 @@ data/
 .env*
 *.tmp
 .render-*
+.neon

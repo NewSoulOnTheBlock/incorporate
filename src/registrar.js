@@ -26,7 +26,7 @@ log(`pay period ${EPOCH_SECONDS}s`);
 log(EXECUTE
   ? "EXECUTE MODE -- real transfers will be sent"
   : "DRY RUN -- set KEEPER_EXECUTE=1 to actually pay");
-log("buyback:", buybackStatus().note);
+log("buyback:", (await buybackStatus()).note);
 
 /* One run at a time. If a run overruns its period -- a slow RPC, a long payout
  * queue -- the next tick is skipped rather than started concurrently. Two runs
